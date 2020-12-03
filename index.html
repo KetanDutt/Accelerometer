@@ -51,13 +51,13 @@
         let recording = false;
         let acl = new Accelerometer({ frequency: 60 });
         acl.addEventListener('reading', () => {
-            document.getElementById("valX").innerText = "Acceleration along the X-axis " + acl.x;
-            document.getElementById("valY").innerText = "Acceleration along the Y-axis " + acl.y;
-            document.getElementById("valZ").innerText = "Acceleration along the Z-axis " + acl.z;
-            if (recording) {
-                let str = "<tr><td>" + acl.x + "</td><td>" + acl.y + "</td><td>" + acl.z + "</td></tr>";
+            document.getElementById("valX").innerText = "Acceleration along the X-axis " + acl.x.toFixed(2);
+            document.getElementById("valY").innerText = "Acceleration along the Y-axis " + acl.y.toFixed(2);
+            document.getElementById("valZ").innerText = "Acceleration along the Z-axis " + acl.z.toFixed(2);
+            // if (recording) {
+                let str = "<tr><td>" + acl.x.toFixed(2) + "</td><td>" + acl.y.toFixed(2) + "</td><td>" + acl.z.toFixed(2) + "</td></tr>";
                 document.getElementById("tbody").innerHTML += str;
-            }
+            // }
         });
 
         acl.start();
@@ -65,7 +65,7 @@
         //     document.getElementById("activated").style.display = "none";
         //     document.getElementById("notActivated").style.display = "inline";
         // }
-
+        StartRecording() ;
         function StartRecording() {
             document.getElementById("StartRecording").style.display = "none";
             document.getElementById("StopRecording").style.display = "inline-block";
