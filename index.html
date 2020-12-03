@@ -10,16 +10,36 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style>
+        body {
+            background: #222222;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            text-transform: capitalize;
+        }
 
-    <link rel="stylesheet" type="text/css" href="style.css" />
+        a {
+            text-transform: capitalize !important;
+        }
+
+        td,
+        th {
+            padding: 0px 0px !important;
+            text-align: center;
+        }
+
+        tr {
+            border-bottom: 1px solid rgb(216, 215, 215);
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container">
+    <div class="container center">
         <div class="row">
-            <h2 class="center"> Accelerometer </h2>
+            <h2> Accelerometer </h2>
         </div>
-        <div class="row center" id="activated">
+        <div class="row" id="activated">
             <div class="row">
                 <h6 id="valX"></h6>
                 <h6 id="valY"></h6>
@@ -37,46 +57,96 @@
                     <thead>
                         <th>X</th>
                         <th>Y</th>
-                        <th>Z</th>
                     </thead>
                     <tbody id="tbody"></tbody>
                 </table>
             </div>
         </div>
-        <div class="row center" id="notActivated" style="display: none;">
+        <div class="row" id="notActivated" style="display: none;">
             <p class="flow-text">Accelerometer not available</p>
         </div>
+        <p id="err"></p>
     </div>
     <script type="text/javascript">
         let recording = false;
-        let acl = new Accelerometer({ frequency: 60 });
-        acl.addEventListener('reading', () => {
-            document.getElementById("valX").innerText = "Acceleration along the X-axis " + acl.x.toFixed(2);
-            document.getElementById("valY").innerText = "Acceleration along the Y-axis " + acl.y.toFixed(2);
-            // document.getElementById("valZ").innerText = "Acceleration along the Z-axis " + acl.z.toFixed(2);
-            // if (recording) {
-            let str = "<tr><td>" + acl.x.toFixed(2) + "</td><td>" + acl.y.toFixed(2) + "</td><td>5</td></tr>";
-            document.getElementById("tbody").innerHTML += str;
-            // }
-        });
 
-        // if (!acl.activated) {
-        //     document.getElementById("activated").style.display = "none";
-        //     document.getElementById("notActivated").style.display = "inline";
-        // }
+        let data = [];
+
+        if (window.DeviceMotionEvent == undefined) {
+            document.getElementById("activated").style.display = "none";
+            document.getElementById("notActivated").style.display = "inline";
+        }
+        else {
+            window.addEventListener("devicemotion", accelerometerUpdate, true);
+        }
+        function accelerometerUpdate(e) {
+            let x = (event.accelerationIncludingGravity.x * 1).toFixed(2);
+            let y = (event.accelerationIncludingGravity.y * 1).toFixed(2);
+
+            document.getElementById("valX").innerText = "Acceleration along the X-axis " + x;
+            document.getElementById("valY").innerText = "Acceleration along the Y-axis " + y;
+
+            if (recording) {
+                let str = "<tr><td>" + x + "</td><td>" + y + "</td></tr>";
+                document.getElementById("tbody").innerHTML += str;
+                data.push([x, y])
+            }
+        }
 
         function StartRecording() {
+            recording = true;
             document.getElementById("StartRecording").style.display = "none";
             document.getElementById("StopRecording").style.display = "inline-block";
             document.getElementById("table").style.display = "table";
-            recording = true;
         }
 
         function StopRecording() {
+            recording = false;
             document.getElementById("StartRecording").style.display = "inline-block";
             document.getElementById("StopRecording").style.display = "none";
-            document.getElementById("table").style.display = "none";
-            recording = false;
+
+            exportToCsv("data.csv", data)
+        }
+        
+        function exportToCsv(filename, rows) {
+            var processRow = function (row) {
+                var finalVal = '';
+                for (var j = 0; j < row.length; j++) {
+                    var innerValue = row[j] === null ? '' : row[j].toString();
+                    if (row[j] instanceof Date) {
+                        innerValue = row[j].toLocaleString();
+                    };
+                    var result = innerValue.replace(/"/g, '""');
+                    if (result.search(/("|,|\n)/g) >= 0)
+                        result = '"' + result + '"';
+                    if (j > 0)
+                        finalVal += ',';
+                    finalVal += result;
+                }
+                return finalVal + '\n';
+            };
+
+            var csvFile = '';
+            for (var i = 0; i < rows.length; i++) {
+                csvFile += processRow(rows[i]);
+            }
+
+            var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+            if (navigator.msSaveBlob) { // IE 10+
+                navigator.msSaveBlob(blob, filename);
+            } else {
+                var link = document.createElement("a");
+                if (link.download !== undefined) { // feature detection
+                    // Browsers that support HTML5 download attribute
+                    var url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", filename);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    // document.body.removeChild(link);
+                }
+            }
         }
     </script>
 </body>
