@@ -33,7 +33,7 @@
                     style="display: none;"><i class="material-icons right">fiber_manual_record</i>Stop Recording</a>
             </div>
             <div class="row">
-                <table id="table" class="highlight" style="display: none;">
+                <table id="table" class="highlight">
                     <thead>
                         <th>X</th>
                         <th>Y</th>
@@ -53,19 +53,18 @@
         acl.addEventListener('reading', () => {
             document.getElementById("valX").innerText = "Acceleration along the X-axis " + acl.x.toFixed(2);
             document.getElementById("valY").innerText = "Acceleration along the Y-axis " + acl.y.toFixed(2);
-            document.getElementById("valZ").innerText = "Acceleration along the Z-axis " + acl.z.toFixed(2);
+            // document.getElementById("valZ").innerText = "Acceleration along the Z-axis " + acl.z.toFixed(2);
             // if (recording) {
-                let str = "<tr><td>" + acl.x.toFixed(2) + "</td><td>" + acl.y.toFixed(2) + "</td><td>" + acl.z.toFixed(2) + "</td></tr>";
-                document.getElementById("tbody").innerHTML += str;
+            let str = "<tr><td>" + acl.x.toFixed(2) + "</td><td>" + acl.y.toFixed(2) + "</td><td>5</td></tr>";
+            document.getElementById("tbody").innerHTML += str;
             // }
         });
 
-        acl.start();
         // if (!acl.activated) {
         //     document.getElementById("activated").style.display = "none";
         //     document.getElementById("notActivated").style.display = "inline";
         // }
-        StartRecording() ;
+
         function StartRecording() {
             document.getElementById("StartRecording").style.display = "none";
             document.getElementById("StopRecording").style.display = "inline-block";
