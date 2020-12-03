@@ -19,26 +19,66 @@
         <div class="row">
             <h2 class="center"> Accelerometer </h2>
         </div>
-        <div class="row">
-            <h5 id="valX"></h5>
-            <h5 id="valY"></h5>
-            <h5 id="valY"></h5>
+        <div class="row center" id="activated">
+            <div class="row">
+                <h6 id="valX"></h6>
+                <h6 id="valY"></h6>
+                <h6 id="valY"></h6>
+            </div>
+            <div class="row">
+                <a id="StartRecording" class="waves-effect waves-light btn green" onclick=StartRecording()><i
+                        class="material-icons right">save</i>Start
+                    Recording</a>
+                <a id="StopRecording" class="waves-effect waves-light btn red" onclick=StopRecording()
+                    style="display: none;"><i class="material-icons right">fiber_manual_record</i>Stop Recording</a>
+            </div>
+            <div class="row">
+                <table id="table" class="highlight" style="display: none;">
+                    <thead>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>Z</th>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
         </div>
-        <div class="row">
-            <a class="waves-effect waves-light btn-large green"><i class="material-icons right">cloud</i>Start Recording</a>
-            <a class="waves-effect waves-light btn-large red"><i class="material-icons right">cloud</i>Stop Recording</a>
+        <div class="row center" id="notActivated" style="display: none;">
+            <p class="flow-text">Accelerometer not available</p>
         </div>
     </div>
     <script type="text/javascript">
+        let recording = false;
         let acl = new Accelerometer({ frequency: 60 });
-
         acl.addEventListener('reading', () => {
             document.getElementById("valX").innerText = "Acceleration along the X-axis " + acl.x;
             document.getElementById("valY").innerText = "Acceleration along the Y-axis " + acl.y;
             document.getElementById("valZ").innerText = "Acceleration along the Z-axis " + acl.z;
+            if (recording) {
+                let str = "<tr><td>" + acl.x + "</td><td>" + acl.y + "</td><td>" + acl.z + "</td></tr>";
+                document.getElementById("tbody").innerHTML += str;
+            }
         });
 
         acl.start();
+        // if (!acl.activated) {
+        //     document.getElementById("activated").style.display = "none";
+        //     document.getElementById("notActivated").style.display = "inline";
+        // }
+
+        function StartRecording() {
+            document.getElementById("StartRecording").style.display = "none";
+            document.getElementById("StopRecording").style.display = "inline-block";
+            document.getElementById("table").style.display = "table";
+            recording = true;
+        }
+
+        function StopRecording() {
+            document.getElementById("StartRecording").style.display = "inline-block";
+            document.getElementById("StopRecording").style.display = "none";
+            document.getElementById("table").style.display = "none";
+            recording = false;
+        }
     </script>
 </body>
 
