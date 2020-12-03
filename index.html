@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accelerometer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <h2 class="center"> Accelerometer </h2>
+        </div>
+        <div class="row">
+            <h4 id="valX"></h4>
+            <h4 id="valY"></h4>
+            <h4 id="valY"></h4>
+        </div>
+    </div>
+    <script type="text/javascript">
+        let acl = new Accelerometer({ frequency: 60 });
+
+        acl.addEventListener('reading', () => {
+            document.getElementById("valX").innerText = "Acceleration along the X-axis " + acl.x;
+            document.getElementById("valY").innerText = "Acceleration along the Y-axis " + acl.y;
+            document.getElementById("valZ").innerText = "Acceleration along the Z-axis " + acl.z;
+        });
+
+        acl.start();
+    </script>
+</body>
+
+</html>
