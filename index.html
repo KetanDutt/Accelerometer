@@ -5,16 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accelerometer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <style>
         body {
             background: #222222;
             color: white;
-            font-family: 'Roboto', sans-serif;
             text-transform: capitalize;
         }
 
@@ -52,8 +49,21 @@
                 <a id="StopRecording" class="waves-effect waves-light btn red" onclick=StopRecording()
                     style="display: none;"><i class="material-icons right">fiber_manual_record</i>Stop Recording</a>
             </div>
+            <div class="row" id="dataFeild" style="display: none;">
+                <div class="row">
+                    <textarea id="textarea" style="height: 200px;background: ghostwhite;"></textarea>
+                </div>
+                <div class="row">
+                    <a id="StartRecording" class="waves-effect waves-light btn red" onclick=clearFile()><i
+                            class="material-icons right">clear</i>Clear</a>
+                    <a id="StartRecording" class="waves-effect waves-light btn green" onclick=copy()><i
+                            class="material-icons right">content_copy</i>Copy</a>
+                    <a id="StartRecording" class="waves-effect waves-light btn cyan" onclick=downloadFile()><i
+                            class="material-icons right">file_download</i>Download</a>
+                </div>
+            </div>
             <div class="row">
-                <table id="table" class="highlight">
+                <table id="table" style="display: none;" class="highlight">
                     <thead>
                         <th>X</th>
                         <th>Y</th>
@@ -70,7 +80,23 @@
     <script type="text/javascript">
         let recording = false;
 
-        let data = [];
+        let data = [
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5],
+            // [251, 365], [4, 45], [64, 5]
+        ];
 
         if (window.DeviceMotionEvent == undefined) {
             document.getElementById("activated").style.display = "none";
@@ -104,10 +130,80 @@
             recording = false;
             document.getElementById("StartRecording").style.display = "inline-block";
             document.getElementById("StopRecording").style.display = "none";
+            if (data.length > 0) {
+                let str = "["
+                for (let i = 0; i < data.length; i++) {
+                    str += "[" + data[i][0] + ", " + data[i][1] + "], "
+                }
+                str = str.substring(0, str.length - 2);
+                str += "]"
+                document.getElementById("dataFeild").style.display = "block";
+                document.getElementById("textarea").value = str;
+            } else {
+                document.getElementById("table").style.display = "none";
+                document.getElementById("dataFeild").style.display = "none";
+            }
+            // exportToCsv("data.csv", data)
+        }
 
+        function copy() {
+            copyTextToClipboard(document.getElementById("textarea").value)
+        }
+
+        function clearFile() {
+            data = [];
+            document.getElementById("textarea").value = " ";
+            document.getElementById("tbody").innerHTML = " ";
+            document.getElementById("StartRecording").style.display = "inline-block";
+            document.getElementById("StopRecording").style.display = "none";
+            document.getElementById("table").style.display = "none";
+            document.getElementById("dataFeild").style.display = "none";
+        }
+
+        function downloadFile() {
             exportToCsv("data.csv", data)
         }
-        
+
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                var msg = successful ? 'successful' : 'unsuccessful';
+                console.log('Fallback: Copying text command was ' + msg);
+                M.toast({ html: 'Copying to clipboard was successful!' })
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                M.toast({ html: 'Could not copy to clipboard!' })
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function copyTextToClipboard(text) {
+            if (!navigator.clipboard) {
+                fallbackCopyTextToClipboard(text);
+                return;
+            }
+            navigator.clipboard.writeText(text).then(function () {
+                console.log('Async: Copying to clipboard was successful!');
+                M.toast({ html: 'Copying to clipboard was successful!' })
+            }, function (err) {
+                console.error('Async: Could not copy text: ', err);
+                M.toast({ html: 'Could not copy to clipboard!' })
+            });
+        }
+
         function exportToCsv(filename, rows) {
             var processRow = function (row) {
                 var finalVal = '';
