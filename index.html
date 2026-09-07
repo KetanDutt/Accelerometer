@@ -4,247 +4,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accelerometer</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <style>
-        body {
-            background: #222222;
-            color: white;
-            text-transform: capitalize;
-        }
-
-        a {
-            text-transform: capitalize !important;
-        }
-
-        td,
-        th {
-            padding: 0px 0px !important;
-            text-align: center;
-        }
-
-        tr {
-            border-bottom: 1px solid rgb(216, 215, 215);
-        }
-    </style>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description"
+        content="Record your device's accelerometer (X, Y, Z) motion data and export it as JSON or CSV for simulation, analysis and prototyping.">
+    <meta name="author" content="Ketan Dutt">
+    <title>Accelerometer — Record &amp; Export Motion Data</title>
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%2338bdf8'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-    <div class="container center">
-        <div class="row">
-            <h2> Accelerometer </h2>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" href="./" aria-label="Accelerometer home">
+                <span class="brand-icon" aria-hidden="true">◎</span>
+                <h1>Accelerometer</h1>
+            </a>
+            <p class="tagline">Record and export your device's motion data.</p>
         </div>
-        <div class="row" id="activated">
-            <div class="row">
-                <h6 id="valX"></h6>
-                <h6 id="valY"></h6>
-                <h6 id="valY"></h6>
+    </header>
+
+    <main class="container">
+        <noscript>
+            <section class="card card-warn">
+                <h2>JavaScript is disabled</h2>
+                <p>This app needs JavaScript to read the device accelerometer. Please enable JavaScript and reload.</p>
+            </section>
+        </noscript>
+
+        <!-- iOS / permission request -->
+        <section id="permission-section" class="card card-accent" hidden>
+            <h2>Allow motion access</h2>
+            <p id="permission-note">To read your device's motion sensors, please grant permission.</p>
+            <button id="permission-btn" type="button" class="btn btn-primary">Enable motion sensors</button>
+        </section>
+
+        <!-- Sensors unavailable / denied -->
+        <section id="unsupported-section" class="card card-warn" hidden>
+            <h2>Motion sensors not available</h2>
+            <p id="unsupported-note">Your browser or device does not expose the accelerometer. You can still use the
+                simulated demo below.</p>
+        </section>
+
+        <!-- Live readout + chart -->
+        <section class="card">
+            <div class="card-header">
+                <h2>Live readout</h2>
+                <span id="recording-badge" class="badge badge-recording" hidden>● Recording</span>
             </div>
-            <div class="row">
-                <a id="StartRecording" class="waves-effect waves-light btn green" onclick=StartRecording()><i
-                        class="material-icons right">save</i>Start
-                    Recording</a>
-                <a id="StopRecording" class="waves-effect waves-light btn red" onclick=StopRecording()
-                    style="display: none;"><i class="material-icons right">fiber_manual_record</i>Stop Recording</a>
-            </div>
-            <div class="row" id="dataFeild" style="display: none;">
-                <div class="row">
-                    <textarea id="textarea" style="height: 200px;background: ghostwhite;"></textarea>
+
+            <div class="readout-grid">
+                <div class="readout readout-x">
+                    <span class="readout-label">X</span>
+                    <span id="valX" class="readout-value">0.00</span>
+                    <span class="readout-unit">m/s²</span>
                 </div>
-                <div class="row">
-                    <a id="StartRecording" class="waves-effect waves-light btn red" onclick=clearFile()><i
-                            class="material-icons right">clear</i>Clear</a>
-                    <a id="StartRecording" class="waves-effect waves-light btn green" onclick=copy()><i
-                            class="material-icons right">content_copy</i>Copy</a>
-                    <a id="StartRecording" class="waves-effect waves-light btn cyan" onclick=downloadFile()><i
-                            class="material-icons right">file_download</i>Download</a>
+                <div class="readout readout-y">
+                    <span class="readout-label">Y</span>
+                    <span id="valY" class="readout-value">0.00</span>
+                    <span class="readout-unit">m/s²</span>
+                </div>
+                <div class="readout readout-z">
+                    <span class="readout-label">Z</span>
+                    <span id="valZ" class="readout-value">0.00</span>
+                    <span class="readout-unit">m/s²</span>
+                </div>
+                <div class="readout readout-mag">
+                    <span class="readout-label">|g|</span>
+                    <span id="valMag" class="readout-value">0.00</span>
+                    <span class="readout-unit">m/s²</span>
                 </div>
             </div>
-            <div class="row">
-                <table id="table" style="display: none;" class="highlight">
-                    <thead>
-                        <th>X</th>
-                        <th>Y</th>
-                    </thead>
-                    <tbody id="tbody"></tbody>
-                </table>
+
+            <div class="controls">
+                <button id="startBtn" type="button" class="btn btn-success" hidden>Start recording</button>
+                <button id="stopBtn" type="button" class="btn btn-danger" hidden>Stop recording</button>
+                <button id="simBtn" type="button" class="btn btn-secondary">Simulate data</button>
             </div>
-        </div>
-        <div class="row" id="notActivated" style="display: none;">
-            <p class="flow-text">Accelerometer not available</p>
-        </div>
-        <p id="err"></p>
-    </div>
-    <script type="text/javascript">
-        let recording = false;
 
-        let data = [
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5],
-            // [251, 365], [4, 45], [64, 5]
-        ];
+            <div class="chart-wrap">
+                <canvas id="chart" role="img" aria-label="Live time-series chart of X, Y and Z acceleration"></canvas>
+                <p class="chart-hint">Live chart — X <span class="k-x">■</span> &nbsp; Y <span class="k-y">■</span>
+                    &nbsp; Z <span class="k-z">■</span></p>
+            </div>
 
-        if (window.DeviceMotionEvent == undefined) {
-            document.getElementById("activated").style.display = "none";
-            document.getElementById("notActivated").style.display = "inline";
-        }
-        else {
-            window.addEventListener("devicemotion", accelerometerUpdate, true);
-        }
-        function accelerometerUpdate(e) {
-            let x = (event.accelerationIncludingGravity.x * 1).toFixed(2);
-            let y = (event.accelerationIncludingGravity.y * 1).toFixed(2);
+            <div id="stats" class="stats" hidden>
+                <div class="stat"><span class="stat-label">Samples</span><span id="statCount">0</span></div>
+                <div class="stat"><span class="stat-label">Duration</span><span id="statDuration">0.0s</span></div>
+                <div class="stat"><span class="stat-label">Sample rate</span><span id="statRate">0 Hz</span></div>
+            </div>
+        </section>
 
-            document.getElementById("valX").innerText = "Acceleration along the X-axis " + x;
-            document.getElementById("valY").innerText = "Acceleration along the Y-axis " + y;
+        <!-- Recorded data -->
+        <section id="data-section" class="card" hidden>
+            <div class="card-header">
+                <h2>Recorded data</h2>
+            </div>
+            <div class="actions">
+                <button id="copyBtn" type="button" class="btn btn-primary">Copy JSON</button>
+                <button id="downloadJsonBtn" type="button" class="btn btn-primary">Download JSON</button>
+                <button id="downloadCsvBtn" type="button" class="btn btn-secondary">Download CSV</button>
+                <button id="clearBtn" type="button" class="btn btn-danger">Clear</button>
+            </div>
+            <label class="field-label" for="textarea">Data — edit and re-export</label>
+            <textarea id="textarea" class="textarea" rows="10" spellcheck="false"
+                placeholder='[{"t":0,"x":0.12,"y":0.03,"z":9.81,"mag":9.81}, ...]'></textarea>
+        </section>
 
-            if (recording) {
-                let str = "<tr><td>" + x + "</td><td>" + y + "</td></tr>";
-                document.getElementById("tbody").innerHTML += str;
-                data.push([x, y])
-            }
-        }
+        <p id="err" role="alert" hidden></p>
+    </main>
 
-        function StartRecording() {
-            recording = true;
-            document.getElementById("StartRecording").style.display = "none";
-            document.getElementById("StopRecording").style.display = "inline-block";
-            document.getElementById("table").style.display = "table";
-        }
+    <footer class="site-footer">
+        <p>Uses the <code>DeviceMotion</code> API — requires HTTPS and a motion-capable device. Data never leaves your
+            device.</p>
+    </footer>
 
-        function StopRecording() {
-            recording = false;
-            document.getElementById("StartRecording").style.display = "inline-block";
-            document.getElementById("StopRecording").style.display = "none";
-            if (data.length > 0) {
-                let str = "["
-                for (let i = 0; i < data.length; i++) {
-                    str += "[" + data[i][0] + ", " + data[i][1] + "], "
-                }
-                str = str.substring(0, str.length - 2);
-                str += "]"
-                document.getElementById("dataFeild").style.display = "block";
-                document.getElementById("textarea").value = str;
-            } else {
-                document.getElementById("table").style.display = "none";
-                document.getElementById("dataFeild").style.display = "none";
-            }
-            // exportToCsv("data.csv", data)
-        }
-
-        function copy() {
-            copyTextToClipboard(document.getElementById("textarea").value)
-        }
-
-        function clearFile() {
-            data = [];
-            document.getElementById("textarea").value = " ";
-            document.getElementById("tbody").innerHTML = " ";
-            document.getElementById("StartRecording").style.display = "inline-block";
-            document.getElementById("StopRecording").style.display = "none";
-            document.getElementById("table").style.display = "none";
-            document.getElementById("dataFeild").style.display = "none";
-        }
-
-        function downloadFile() {
-            exportToCsv("data.csv", data)
-        }
-
-        function fallbackCopyTextToClipboard(text) {
-            var textArea = document.createElement("textarea");
-            textArea.value = text;
-
-            // Avoid scrolling to bottom
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.position = "fixed";
-
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-
-            try {
-                var successful = document.execCommand('copy');
-                var msg = successful ? 'successful' : 'unsuccessful';
-                console.log('Fallback: Copying text command was ' + msg);
-                M.toast({ html: 'Copying to clipboard was successful!' })
-            } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
-                M.toast({ html: 'Could not copy to clipboard!' })
-            }
-
-            document.body.removeChild(textArea);
-        }
-
-        function copyTextToClipboard(text) {
-            if (!navigator.clipboard) {
-                fallbackCopyTextToClipboard(text);
-                return;
-            }
-            navigator.clipboard.writeText(text).then(function () {
-                console.log('Async: Copying to clipboard was successful!');
-                M.toast({ html: 'Copying to clipboard was successful!' })
-            }, function (err) {
-                console.error('Async: Could not copy text: ', err);
-                M.toast({ html: 'Could not copy to clipboard!' })
-            });
-        }
-
-        function exportToCsv(filename, rows) {
-            var processRow = function (row) {
-                var finalVal = '';
-                for (var j = 0; j < row.length; j++) {
-                    var innerValue = row[j] === null ? '' : row[j].toString();
-                    if (row[j] instanceof Date) {
-                        innerValue = row[j].toLocaleString();
-                    };
-                    var result = innerValue.replace(/"/g, '""');
-                    if (result.search(/("|,|\n)/g) >= 0)
-                        result = '"' + result + '"';
-                    if (j > 0)
-                        finalVal += ',';
-                    finalVal += result;
-                }
-                return finalVal + '\n';
-            };
-
-            var csvFile = '';
-            for (var i = 0; i < rows.length; i++) {
-                csvFile += processRow(rows[i]);
-            }
-
-            var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-            if (navigator.msSaveBlob) { // IE 10+
-                navigator.msSaveBlob(blob, filename);
-            } else {
-                var link = document.createElement("a");
-                if (link.download !== undefined) { // feature detection
-                    // Browsers that support HTML5 download attribute
-                    var url = URL.createObjectURL(blob);
-                    link.setAttribute("href", url);
-                    link.setAttribute("download", filename);
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    // document.body.removeChild(link);
-                }
-            }
-        }
-    </script>
+    <script src="js/app.js"></script>
 </body>
 
 </html>
