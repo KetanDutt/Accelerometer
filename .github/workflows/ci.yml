@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main, arena/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JS syntax
+        run: node --check js/app.js
+
+      - name: Check for duplicate element IDs
+        run: |
+          python3 - <<'PY'
+          import html.parser
+          from collections import Counter
+
+          class P(html.parser.HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = []
+              def handle_starttag(self, tag, attrs):
+                  for k, v in attrs:
+                      if k == 'id':
+                          self.ids.append(v)
+
+          p = P()
+          p.feed(open('index.html').read())
+          dups = {k: v for k, v in Counter(p.ids).items() if v > 1}
+          assert not dups, f"Duplicate element IDs detected: {dups}"
+          print("OK: no duplicate element IDs")
+          PY
+
+      - name: Verify all JS-referenced element IDs exist in HTML
+        run: |
+          python3 - <<'PY'
+          import re
+          html = open('index.html').read()
+          js = open('js/app.js').read()
+          html_ids = set(re.findall(r'id="([a-zA-Z0-9-]+)"', html))
+          refs = set(re.findall(r'el\(["\']([a-zA-Z0-9-]+)["\']\)', js))
+          refs |= set(re.findall(r'getElementById\(["\']([a-zA-Z0-9-]+)["\']\)', js))
+          missing = refs - html_ids
+          assert not missing, f"JS references IDs missing from HTML: {missing}"
+          print("OK: all referenced element IDs are present in HTML")
+          PY

@@ -1,0 +1,21 @@
+# Node / tooling
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# System
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+
+# Temp
+*.tmp
+*.log

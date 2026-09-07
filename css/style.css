@@ -1,0 +1,456 @@
+/* =========================================================================
+   Accelerometer — stylesheet
+   Dark, responsive UI with no external dependencies.
+   ========================================================================= */
+
+:root {
+    --bg: #0b1120;
+    --bg-elev: #111a2e;
+    --surface: #1e293b;
+    --surface-2: #273449;
+    --border: #2f3d55;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #fbbf24;
+    --chart-x: #38bdf8;
+    --chart-y: #4ade80;
+    --chart-z: #fbbf24;
+    --radius: 14px;
+    --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font);
+    background: radial-gradient(1200px 600px at 50% -10%, #14203a 0%, var(--bg) 60%) fixed;
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.container {
+    width: min(860px, 100% - 2rem);
+    margin: 0 auto;
+}
+
+/* ---------------- Header / footer ---------------- */
+
+.site-header {
+    padding: 2rem 0 0.25rem;
+}
+
+.header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1.25rem;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.brand-icon {
+    font-size: 1.7rem;
+    line-height: 1;
+    color: var(--accent);
+    transform: translateY(2px);
+}
+
+.brand h1 {
+    font-size: 1.75rem;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.tagline {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.site-footer {
+    margin-top: auto;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+}
+
+.site-footer code {
+    background: var(--surface-2);
+    padding: 0.1rem 0.35rem;
+    border-radius: 5px;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+}
+
+/* ---------------- Cards ---------------- */
+
+main {
+    display: grid;
+    gap: 1.25rem;
+    padding: 1.25rem 0 2rem;
+}
+
+.card {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg-elev) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.25rem;
+}
+
+.card h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+}
+
+.card-accent {
+    border-color: #25607d;
+    box-shadow: 0 0 0 1px #25607d inset, var(--shadow);
+}
+
+.card-warn {
+    border-color: #7a5a13;
+    box-shadow: 0 0 0 1px #7a5a13 inset, var(--shadow);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.badge-recording {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.45;
+    }
+}
+
+/* ---------------- Readout ---------------- */
+
+.readout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin: 0.5rem 0 1rem;
+}
+
+.readout {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.readout-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.readout-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono);
+    line-height: 1.1;
+}
+
+.readout-unit {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.readout-x .readout-value {
+    color: var(--chart-x);
+}
+
+.readout-y .readout-value {
+    color: var(--chart-y);
+}
+
+.readout-z .readout-value {
+    color: var(--chart-z);
+}
+
+.readout-mag .readout-value {
+    color: var(--text);
+}
+
+/* ---------------- Controls ---------------- */
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.btn {
+    appearance: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #0b1120;
+    transition: transform 0.08s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:focus-visible {
+    outline: 3px solid rgba(56, 189, 248, 0.55);
+    outline-offset: 2px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background: var(--accent);
+}
+
+.btn-success {
+    background: var(--success);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: #fff;
+}
+
+.btn-secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.btn.active {
+    box-shadow: 0 0 0 2px #0b1120, 0 0 0 4px currentColor;
+}
+
+/* ---------------- Chart ---------------- */
+
+.chart-wrap {
+    background: #0a0f1c;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+
+#chart {
+    display: block;
+    width: 100%;
+    height: 240px;
+}
+
+.chart-hint {
+    margin: 0.4rem 0.2rem 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+}
+
+.k-x {
+    color: var(--chart-x);
+}
+
+.k-y {
+    color: var(--chart-y);
+}
+
+.k-z {
+    color: var(--chart-z);
+}
+
+/* ---------------- Stats ---------------- */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+}
+
+.stat {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.stat span:last-child {
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono);
+}
+
+/* ---------------- Data / actions ---------------- */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+}
+
+.field-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+}
+
+.textarea {
+    width: 100%;
+    background: #0a0f1c;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 180px;
+}
+
+.textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: transparent;
+}
+
+/* ---------------- Error / notices ---------------- */
+
+.notice-error {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    color: #fecaca;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.notice-success {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    color: #bbf7d0;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* ---------------- Responsive ---------------- */
+
+@media (max-width: 560px) {
+    .site-header {
+        padding-top: 1.25rem;
+    }
+
+    .brand h1 {
+        font-size: 1.4rem;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+
+    .controls .btn {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+
+    #chart {
+        height: 200px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .badge-recording,
+    .btn {
+        animation: none;
+        transition: none;
+    }
+}
