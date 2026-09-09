@@ -65,16 +65,21 @@ re-points variables — the rendering rule exists exactly once:
 | Material | Use | Character |
 | --- | --- | --- |
 | `.glass--primary` | hero, live panel, export studio | most opaque, `--blur-lg`, `saturate(1.7)` |
-| `.glass--secondary` | info cards, footer | lighter, `--blur-md` |
+| `.glass--secondary` | capture controls, info cards, footer | lighter, `--blur-md` |
 | `.glass--tinted` | permission / accent states | accent-tinted |
 | `.glass--warning` | unsupported / destructive notices | amber-tinted |
 | `.glass--floating` | appbar, menus, dialog, toast, chart cursor | `--blur-xl`, `saturate(1.85)`, strongest shadow |
 | `.card--inset` | readouts, chart, editor, stats — anything **inside** a glass surface | fill only, **no** `backdrop-filter` |
 
+Main-column surfaces are primary; supporting ones (the capture controls, the
+info cards, the footer) are secondary, so the page has a focal point instead of
+four equally loud panels.
+
 Two details that matter:
 
 1. **No nested backdrop filters.** A second blur inside an already-blurred
-   surface costs frames and turns muddy, so inset surfaces are translucent fills.
+   surface costs frames and turns muddy, so inset surfaces are translucent
+   fills — including secondary buttons, which always sit inside a panel.
 2. **Highlights are pseudo-elements with `z-index: -1`** inside an isolated
    stacking context, so no child ever needs `position: relative` to sit above the
    glass, and nothing has to be clipped with `overflow: hidden` (which would
@@ -130,10 +135,15 @@ Status hues have two grades:
 - `--success-contrast`, `--danger-contrast`, `--warning-contrast` — **text** on a
   soft tint (≥ 4.5:1). Chips and the recording badge use these.
 
+Series hues work the same way: `--series-x/y/z` paint chart lines and meters
+(graphical, ≥ 3:1), while `--series-x/y/z-ink` paint the readout numerals, which
+are read as text and are held to 4.5:1.
+
 The contrast audit composits each foreground over its real surface (tint →
 glass → page) rather than over a flat white, because translucency changes the
-answer. Current results: **light 3.37:1 minimum** (large readout numerals),
-**dark 6.76:1 minimum**; all body text ≥ 7:1 in both themes.
+answer. Current results: **every text case ≥ 5.1:1** in light and **≥ 6.7:1** in
+dark; the lowest figure anywhere in the app is 3.37:1, the Z series line on an
+inset card, which is a graphical element (WCAG 1.4.11 asks for 3:1).
 
 ---
 
@@ -163,9 +173,11 @@ ambient fields), `prefers-contrast: more` (stronger hairlines and text),
 
 ## 9. Components
 
-- **Appbar** floats above content and firms up as you scroll: at rest it uses
-  `--mat-appbar-rest-*` (lighter, `--blur-md`); once `body.is-scrolled` it adopts
-  the floating material at `--blur-xl`.
+- **Appbar** floats above content and firms up as you scroll. Two effects, split
+  by cost: an `.appbar__veil` whose opacity is bound to `--header-progress`
+  (written by `js/ui.js`, 0 → 1 over the first 120 px) carries the denser fill
+  *and* the deeper shadow continuously, while `body.is-scrolled` flips only what
+  cannot be ramped cheaply — blur, saturation and the edge colour.
 - **Navigation** exists twice — a segmented bar on desktop and a thumb-friendly
   dock below 900 px — sharing one `.nav-link` hook so the active section is
   always mirrored. The pill indicator glides (`transform` + `width`) instead of
@@ -186,6 +198,13 @@ ambient fields), `prefers-contrast: more` (stronger hairlines and text),
   (e.g. *Download* after a copy) and a dismiss control.
 - **Empty / idle states** carry one icon, one line of copy and one action — the
   chart's idle overlay is a single pulsing dot, not a shimmer.
+- **Loading state**: before the app publishes `data-mode` on `<body>`, the four
+  readout numerals wear a skeleton bar (`body:not([data-mode]) .readout__value`)
+  that breathes on opacity alone. The readouts keep their final geometry, so the
+  first sample lands with no reflow and the skeleton needs no JavaScript.
+- **Field errors** live next to the field: an invalid editor grows a one-line
+  hint (`.editor__hint`, revealed by `[data-state="invalid"]`) under the textarea
+  and collapses to zero height when the JSON parses, so it never reserves space.
 
 ---
 

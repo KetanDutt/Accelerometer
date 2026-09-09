@@ -95,6 +95,21 @@
     }
 }
 
+/* ---------- Loading -------------------------------------------------------
+   Opacity only, slow, and low-contrast: a skeleton should read as "not ready
+   yet", never as decoration competing with the content around it. */
+@keyframes pulse-soft {
+
+    0%,
+    100% {
+        opacity: 0.85;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
 /* ---------- Popovers ------------------------------------------------------ */
 @keyframes pop-in {
     from {
@@ -228,6 +243,11 @@
     .ambient__field {
         display: none;
     }
+
+    /* The veil only exists to densify translucent glass. */
+    .appbar__veil {
+        display: none;
+    }
 }
 
 @media (forced-colors: active) {
@@ -241,6 +261,7 @@
 
     .glass::before,
     .glass::after,
+    .appbar__veil,
     .ambient {
         display: none;
     }

@@ -220,11 +220,12 @@
     --btn-shadow: var(--shadow-contact), 0 8px 20px var(--danger-soft);
 }
 
+/* Secondary buttons always sit *inside* a glass panel, so they take the
+   translucent fill without a backdrop-filter of their own: a second blur
+   nested in an already-blurred surface costs frames and turns muddy. */
 .btn--secondary {
     --btn-bg: var(--fill-quiet);
     --btn-border: var(--hairline);
-    backdrop-filter: blur(var(--blur-sm)) saturate(1.4);
-    -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(1.4);
 }
 
 .btn--primary:hover:not(:disabled) {
@@ -520,11 +521,17 @@
     text-decoration: none;
     white-space: nowrap;
     -webkit-tap-highlight-color: transparent;
-    transition: color var(--dur-2) var(--ease-out);
+    transition:
+        color var(--dur-2) var(--ease-out),
+        transform var(--dur-1) var(--ease-out);
 }
 
 .segmented__item:hover {
     color: var(--text-strong);
+}
+
+.segmented__item:active {
+    transform: scale(0.97);
 }
 
 .segmented__item.is-active {
@@ -892,8 +899,10 @@ body[data-mode="simulation"] .panel--live {
     box-shadow: 0 -1px 0 var(--hairline);
 }
 
-.details__row:hover {
-    background: var(--fill-quiet);
+@media (hover: hover) and (pointer: fine) {
+    .details__row:hover {
+        background: var(--fill-quiet);
+    }
 }
 
 .details__row dt {
@@ -922,6 +931,7 @@ body[data-mode="simulation"] .panel--live {
 .readout {
     --series: var(--accent);
     --series-soft: var(--accent-soft);
+    --series-ink: var(--accent-contrast);
     position: relative;
     isolation: isolate;
     display: grid;
@@ -949,31 +959,39 @@ body[data-mode="simulation"] .panel--live {
     pointer-events: none;
 }
 
-.readout:hover {
-    transform: translateY(-2px);
-    border-color: var(--hairline-strong);
-    box-shadow: var(--shadow-1);
+/* Hover elevation is a pointer affordance: on touch it would stick to the last
+   tapped card, so it only exists where a real cursor can leave again. */
+@media (hover: hover) and (pointer: fine) {
+    .readout:hover {
+        transform: translateY(-2px);
+        border-color: var(--hairline-strong);
+        box-shadow: var(--shadow-1);
+    }
 }
 
 .readout--x {
     --series: var(--series-x);
     --series-soft: var(--series-x-soft);
+    --series-ink: var(--series-x-ink);
 }
 
 .readout--y {
     --series: var(--series-y);
     --series-soft: var(--series-y-soft);
+    --series-ink: var(--series-y-ink);
 }
 
 .readout--z {
     --series: var(--series-z);
     --series-soft: var(--series-z-soft);
+    --series-ink: var(--series-z-ink);
 }
 
 /* Magnitude is derived rather than an axis, so it takes the accent hue. */
 .readout--mag {
     --series: var(--accent);
     --series-soft: var(--accent-soft);
+    --series-ink: var(--accent-contrast);
 }
 
 .readout__label {
@@ -991,7 +1009,27 @@ body[data-mode="simulation"] .panel--live {
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.045em;
     line-height: 1.15;
-    color: var(--series);
+    color: var(--series-ink);
+}
+
+/* Loading state (§22): until the app has booted and set `data-mode`, the
+   numerals are masked by a bar of the same size. The readouts keep their final
+   geometry the whole time, so the first sample lands without any reflow. */
+body:not([data-mode]) .readout__value {
+    position: relative;
+    color: transparent;
+}
+
+body:not([data-mode]) .readout__value::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.26em;
+    width: 3.4em;
+    height: 0.6em;
+    border-radius: var(--radius-xs);
+    background: var(--skeleton);
+    animation: pulse-soft 1.9s var(--ease-in-out) infinite;
 }
 
 .readout__unit {
@@ -1021,15 +1059,14 @@ body[data-mode="simulation"] .panel--live {
 }
 
 /* ---------- Chart -------------------------------------------------------- */
+/* The chart, editor and stats all carry `.card--inset` in the markup, so the
+   material itself is declared exactly once — these rules only add geometry. */
 .chart {
     margin: 0;
     display: grid;
     gap: var(--space-3);
     padding: var(--space-4);
-    background: var(--mat-inset-bg);
-    border: 1px solid var(--mat-inset-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--mat-inset-shadow);
 }
 
 .chart__head {
@@ -1248,10 +1285,7 @@ body[data-mode="simulation"] .panel--live {
     display: grid;
     gap: var(--space-3);
     padding: var(--space-4);
-    background: var(--mat-inset-bg);
-    border: 1px solid var(--mat-inset-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--mat-inset-shadow);
 }
 
 .editor__topline {
@@ -1317,6 +1351,7 @@ body[data-mode="simulation"] .panel--live {
 .textarea:focus {
     outline: none;
     border-color: var(--accent-border);
+    background: var(--fill-sunken-focus);
     box-shadow: var(--shadow-focus);
 }
 
@@ -1328,6 +1363,45 @@ body[data-mode="simulation"] .panel--live {
     box-shadow: 0 0 0 3px var(--danger-soft);
 }
 
+/* Field-level error, kept next to the content it describes and quiet enough to
+   sit under an editor you are still typing in. The row animates 0fr -> 1fr so
+   it opens to the copy's real height (a max-height cap would clip it on a
+   narrow phone) and reserves no space at all while the JSON is valid. */
+.editor__hint {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        grid-template-rows var(--dur-3) var(--ease-out),
+        opacity var(--dur-2) var(--ease-out),
+        visibility var(--dur-3) linear;
+}
+
+.editor__hint-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    min-height: 0;
+    overflow: hidden;
+    padding-top: 0.55rem;
+    color: var(--danger-contrast);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.editor__hint .icon {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.2rem;
+}
+
+[data-state="invalid"] .editor__hint {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+}
+
 /* ---------- Empty state -------------------------------------------------- */
 .empty {
     position: absolute;
@@ -1337,7 +1411,7 @@ body[data-mode="simulation"] .panel--live {
     justify-items: center;
     gap: var(--space-3);
     padding: var(--space-5);
-    border: 1px dashed var(--hairline-strong);
+    border: 1px dashed var(--hairline);
     border-radius: var(--radius-md);
     background: var(--fill-quiet);
     text-align: center;

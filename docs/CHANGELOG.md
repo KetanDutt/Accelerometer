@@ -42,6 +42,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Static audits**: WCAG contrast for every text token composited over its real
   surface, CSS class coverage, and token discipline (see `docs/DEVELOPMENT.md`).
 
+#### Polish pass
+
+- **Progressive appbar lift**: a veil bound to `--header-progress` (0 → 1 over
+  the first 120 px of scroll) now carries the denser fill and deeper shadow
+  continuously, instead of the header snapping at a single threshold. Only
+  opacity animates, so the ramp stays on the compositor.
+- **Readout loading skeleton**: until the app publishes `data-mode`, the four
+  numerals wear a bar of the same size that breathes on opacity alone. Pure CSS,
+  no reflow when the first sample lands.
+- **Field-level editor error**: an invalid array grows a one-line hint under the
+  textarea (icon + what to do) and collapses to zero height once it parses,
+  instead of reporting the problem only in the chip above the field.
+- **Series ink tokens** (`--series-x/y/z-ink`): readout numerals now use a
+  deepened grade of the series hue and clear 4.5:1 as text, while chart lines and
+  meters keep the brighter 3:1 graphical grade.
+- **Tactile navigation**: segmented items and dock items compress slightly on
+  press, matching the buttons.
+- **Focused editor field** brightens (`--fill-sunken-focus`) alongside the border
+  and focus ring.
+
 ### Changed
 
 - **Stylesheet split**: `css/style.css` replaced by `tokens.css`, `base.css`,
@@ -54,6 +74,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   higher-contrast variant for text — so chips and badges meet WCAG AA.
 - **Filled buttons** use real hover/press colours instead of a brightness filter
   (which also lightened the blurred backdrop behind them).
+- **Depth hierarchy**: the capture-controls panel moved from primary to secondary
+  glass, so the live workspace is the focal point and the supporting column
+  recedes behind it.
+- **Hover elevation is now pointer-only** (`.readout`, `.details__row` join
+  `.card--info` under `@media (hover: hover)`), so a tapped card on a phone no
+  longer keeps its raised state.
+- **Inset material declared once**: `.chart` and `.editor` re-declared the same
+  background/border/shadow as the `.card--inset` they already carry; those rules
+  now only add geometry.
 
 ### Fixed
 
@@ -64,6 +93,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Nested backdrop filters**: inset surfaces (readouts, chart, editor, stats)
   previously blurred a second time on top of an already-blurred panel; they are
   now translucent fills, which is both clearer and cheaper.
+- **Secondary buttons carried their own `backdrop-filter`** while always sitting
+  inside a glass panel — the last remaining nested blur, now removed (up to four
+  of them were on screen at once in the export actions).
+- **Empty-state outline** softened from `--hairline-strong` to `--hairline`: it
+  was drawing a dashed second border directly on top of the textarea's own edge.
+- **`prefers-reduced-transparency` + scroll**: `body.is-scrolled .appbar__inner`
+  out-specified the reduced-transparency rule and put the translucent floating
+  material back on the header. The scrolled state now only re-points blur,
+  saturation and edge, so the solid surface survives the scroll.
 - **Glass surfaces no longer use `overflow: hidden`**, so popovers and tooltips
   anchored inside them are not clipped.
 - **Contrast failures** in the light theme: success button label (4.31:1),

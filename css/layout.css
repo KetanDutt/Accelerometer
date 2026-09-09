@@ -41,12 +41,29 @@
         -webkit-backdrop-filter var(--dur-3) var(--ease-out);
 }
 
+/* The denser fill and deeper shadow ride on a veil whose opacity is bound to
+   `--header-progress` (written by js/ui.js as you scroll). One opacity ramp on
+   one small layer — the compositor's cheapest animation — so the header gains
+   depth continuously instead of snapping at a threshold. The class below only
+   flips what cannot be interpolated cheaply: blur, saturation and edge. */
+.appbar__veil {
+    position: absolute;
+    inset: 0;
+    /* One step below the material's own highlight/edge pseudo-layers (both at
+       -1), so densifying the glass never dulls the light ramp across its top. */
+    z-index: -2;
+    border-radius: inherit;
+    background: var(--mat-appbar-lift-bg);
+    box-shadow: var(--shadow-3);
+    opacity: var(--header-progress, 0);
+    pointer-events: none;
+    transition: opacity var(--dur-2) linear;
+}
+
 body.is-scrolled .appbar__inner {
-    --mat-bg: var(--mat-floating-bg);
     --mat-blur: var(--blur-xl);
     --mat-sat: var(--mat-floating-sat);
     --mat-border: var(--mat-floating-border);
-    --mat-shadow: var(--shadow-3);
     transform: translateY(-2px);
 }
 
@@ -232,7 +249,13 @@ body.is-scrolled .appbar__inner {
     color: var(--text-tertiary);
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
-    transition: color var(--dur-2) var(--ease-out);
+    transition:
+        color var(--dur-2) var(--ease-out),
+        transform var(--dur-1) var(--ease-out);
+}
+
+.dock__item:active {
+    transform: scale(0.96);
 }
 
 .dock__item .icon {
