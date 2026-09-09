@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef2f8">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c1018">
     <meta name="description"
         content="Record your device's accelerometer (X, Y, Z) motion data and export it as JSON or CSV for simulation, analysis and prototyping.">
     <meta name="author" content="Ketan Dutt">
@@ -15,110 +16,280 @@
 </head>
 
 <body>
-    <header class="site-header">
-        <div class="container header-inner">
-            <a class="brand" href="./" aria-label="Accelerometer home">
-                <span class="brand-icon" aria-hidden="true">◎</span>
-                <h1>Accelerometer</h1>
-            </a>
-            <p class="tagline">Record and export your device's motion data.</p>
-        </div>
-    </header>
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="container header-inner glass-floating" data-reveal>
+                <a class="brand" href="./" aria-label="Accelerometer home">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="brand-gradient" x1="8" y1="6" x2="40" y2="42"
+                                    gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#7DB8FF" />
+                                    <stop offset="1" stop-color="#5B72FF" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="24" cy="24" r="19" stroke="url(#brand-gradient)" stroke-width="3.2" />
+                            <circle cx="24" cy="24" r="10" stroke="url(#brand-gradient)" stroke-opacity="0.62"
+                                stroke-width="3.2" />
+                            <circle cx="24" cy="24" r="3.25" fill="url(#brand-gradient)" />
+                        </svg>
+                    </span>
+                    <span class="brand-copy">
+                        <span class="brand-title">Accelerometer</span>
+                        <span class="brand-subtitle">On-device motion capture studio</span>
+                    </span>
+                </a>
 
-    <main class="container">
-        <noscript>
-            <section class="card card-warn">
-                <h2>JavaScript is disabled</h2>
-                <p>This app needs JavaScript to read the device accelerometer. Please enable JavaScript and reload.</p>
+                <nav class="site-nav" aria-label="Primary">
+                    <a href="#overview" class="nav-link is-active">Overview</a>
+                    <a href="#workspace" class="nav-link">Workspace</a>
+                    <a href="#export" class="nav-link">Export</a>
+                    <a href="#privacy" class="nav-link">Privacy</a>
+                </nav>
+
+                <div class="header-status" aria-live="polite">
+                    <span class="status-chip status-chip-subtle">Private</span>
+                    <span id="sensorStatus" class="status-chip status-chip-live">Checking sensors</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="container app-shell">
+            <noscript>
+                <section class="surface surface-warning alert-panel">
+                    <h2>JavaScript is disabled</h2>
+                    <p>This app needs JavaScript to read the device accelerometer. Please enable JavaScript and reload.</p>
+                </section>
+            </noscript>
+
+            <section id="overview" class="surface surface-primary overview-panel" data-nav-section data-reveal>
+                <div class="overview-copy">
+                    <p class="eyebrow">Motion capture, refined</p>
+                    <h1>Record live accelerometer data in a calm, precise workspace.</h1>
+                    <p class="lead">Capture real X, Y, and Z motion, monitor the signal in real time, and export
+                        structured data as JSON or CSV without sending anything off-device.</p>
+                    <div class="feature-row" aria-label="Key features">
+                        <span class="feature-pill">Live charting</span>
+                        <span class="feature-pill">Editable export</span>
+                        <span class="feature-pill">Sensor-aware permissions</span>
+                        <span class="feature-pill">Desktop simulation</span>
+                    </div>
+                </div>
+
+                <div class="overview-aside">
+                    <section class="mini-panel glass-secondary">
+                        <span class="mini-label">Session status</span>
+                        <strong id="sessionStatus">Preparing workspace</strong>
+                        <p id="liveNote">Allow motion access or start the simulator to preview the full workflow on any
+                            device.</p>
+                    </section>
+
+                    <div class="mini-grid">
+                        <article class="mini-stat glass-secondary">
+                            <span class="mini-label">Privacy</span>
+                            <p>Everything runs locally in the browser. Nothing is uploaded or shared.</p>
+                        </article>
+                        <article class="mini-stat glass-secondary">
+                            <span class="mini-label">Exports</span>
+                            <p>Copy or download timestamped samples as JSON or CSV whenever you're ready.</p>
+                        </article>
+                    </div>
+                </div>
             </section>
-        </noscript>
 
-        <!-- iOS / permission request -->
-        <section id="permission-section" class="card card-accent" hidden>
-            <h2>Allow motion access</h2>
-            <p id="permission-note">To read your device's motion sensors, please grant permission.</p>
-            <button id="permission-btn" type="button" class="btn btn-primary">Enable motion sensors</button>
-        </section>
+            <section id="workspace" class="workspace-grid" data-nav-section>
+                <section class="surface surface-primary live-panel" data-reveal>
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">Live workspace</p>
+                            <h2>Realtime motion readout</h2>
+                            <p class="panel-copy">Monitor each axis, magnitude, and signal history while the sensor or
+                                simulator streams data.</p>
+                        </div>
+                        <span id="recording-badge" class="badge badge-recording" hidden>
+                            <span class="badge-dot" aria-hidden="true"></span>
+                            Recording
+                        </span>
+                    </div>
 
-        <!-- Sensors unavailable / denied -->
-        <section id="unsupported-section" class="card card-warn" hidden>
-            <h2>Motion sensors not available</h2>
-            <p id="unsupported-note">Your browser or device does not expose the accelerometer. You can still use the
-                simulated demo below.</p>
-        </section>
+                    <div class="readout-grid">
+                        <article id="readoutX" class="readout readout-x">
+                            <span class="readout-label">X Axis</span>
+                            <span id="valX" class="readout-value">0.00</span>
+                            <span class="readout-unit">m/s²</span>
+                        </article>
+                        <article id="readoutY" class="readout readout-y">
+                            <span class="readout-label">Y Axis</span>
+                            <span id="valY" class="readout-value">0.00</span>
+                            <span class="readout-unit">m/s²</span>
+                        </article>
+                        <article id="readoutZ" class="readout readout-z">
+                            <span class="readout-label">Z Axis</span>
+                            <span id="valZ" class="readout-value">0.00</span>
+                            <span class="readout-unit">m/s²</span>
+                        </article>
+                        <article id="readoutMag" class="readout readout-mag">
+                            <span class="readout-label">Magnitude</span>
+                            <span id="valMag" class="readout-value">0.00</span>
+                            <span class="readout-unit">m/s²</span>
+                        </article>
+                    </div>
 
-        <!-- Live readout + chart -->
-        <section class="card">
-            <div class="card-header">
-                <h2>Live readout</h2>
-                <span id="recording-badge" class="badge badge-recording" hidden>● Recording</span>
-            </div>
+                    <div class="chart-wrap glass-secondary">
+                        <div class="chart-header">
+                            <div>
+                                <span class="mini-label">Motion field</span>
+                                <h3>Realtime response</h3>
+                            </div>
+                            <p class="chart-hint">X <span class="legend-swatch legend-x"></span> Y <span
+                                    class="legend-swatch legend-y"></span> Z <span
+                                    class="legend-swatch legend-z"></span></p>
+                        </div>
+                        <canvas id="chart" role="img" aria-label="Live time-series chart of X, Y and Z acceleration"></canvas>
+                    </div>
 
-            <div class="readout-grid">
-                <div class="readout readout-x">
-                    <span class="readout-label">X</span>
-                    <span id="valX" class="readout-value">0.00</span>
-                    <span class="readout-unit">m/s²</span>
+                    <div id="stats" class="stats" hidden>
+                        <div class="stat glass-secondary">
+                            <span class="stat-label">Samples</span>
+                            <span id="statCount">0</span>
+                        </div>
+                        <div class="stat glass-secondary">
+                            <span class="stat-label">Duration</span>
+                            <span id="statDuration">0.0s</span>
+                        </div>
+                        <div class="stat glass-secondary">
+                            <span class="stat-label">Sample rate</span>
+                            <span id="statRate">0 Hz</span>
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="sidebar-stack">
+                    <section id="permission-section" class="surface surface-tinted alert-panel" hidden data-reveal>
+                        <h2>Allow motion access</h2>
+                        <p id="permission-note">To read your device's motion sensors, please grant permission.</p>
+                        <button id="permission-btn" type="button" class="btn btn-primary">Enable motion sensors</button>
+                    </section>
+
+                    <section id="unsupported-section" class="surface surface-warning alert-panel" hidden data-reveal>
+                        <h2>Motion sensors not available</h2>
+                        <p id="unsupported-note">Your browser or device does not expose the accelerometer. You can still use the
+                            simulated demo below.</p>
+                    </section>
+
+                    <section class="surface surface-floating control-panel" data-reveal>
+                        <div class="panel-heading panel-heading-compact">
+                            <div>
+                                <p class="eyebrow">Capture controls</p>
+                                <h2>Start a session</h2>
+                            </div>
+                            <span id="modeStatus" class="status-chip status-chip-subtle">Idle</span>
+                        </div>
+                        <p class="panel-copy">Use the real sensor when available, or preview the complete recording flow
+                            with synthetic data on desktop.</p>
+
+                        <div class="controls">
+                            <button id="startBtn" type="button" class="btn btn-success" hidden>Start recording</button>
+                            <button id="stopBtn" type="button" class="btn btn-danger" hidden>Stop recording</button>
+                            <button id="simBtn" type="button" class="btn btn-secondary">Simulate data</button>
+                        </div>
+
+                        <div class="detail-list" aria-label="Session details">
+                            <div class="detail-row">
+                                <span>Source</span>
+                                <strong id="sourceStatus">Checking availability</strong>
+                            </div>
+                            <div class="detail-row">
+                                <span>State</span>
+                                <strong id="stateStatus">Preparing</strong>
+                            </div>
+                            <div class="detail-row">
+                                <span>Output</span>
+                                <strong>JSON / CSV</strong>
+                            </div>
+                        </div>
+                    </section>
+                </aside>
+            </section>
+
+            <section id="export" class="surface surface-primary export-panel" data-nav-section data-reveal>
+                <div id="data-section" class="export-shell is-empty">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">Export studio</p>
+                            <h2>Review and package your data</h2>
+                            <p class="panel-copy">Captured samples appear here for editing, copying, and download once a
+                                session is complete.</p>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button id="copyBtn" type="button" class="btn btn-primary" disabled>Copy JSON</button>
+                        <button id="downloadJsonBtn" type="button" class="btn btn-primary" disabled>Download JSON</button>
+                        <button id="downloadCsvBtn" type="button" class="btn btn-secondary" disabled>Download CSV</button>
+                        <button id="clearBtn" type="button" class="btn btn-ghost" disabled>Clear</button>
+                    </div>
+
+                    <div class="editor-shell glass-secondary">
+                        <div class="field-topline">
+                            <label class="field-label" for="textarea">Data editor</label>
+                            <span id="dataSummary" class="field-meta">No samples recorded yet</span>
+                        </div>
+                        <textarea id="textarea" class="textarea" rows="12" spellcheck="false"
+                            placeholder='[{"t":0,"x":0.12,"y":0.03,"z":9.81,"mag":9.81}, ...]'></textarea>
+
+                        <div id="emptyState" class="empty-state" aria-live="polite">
+                            <div class="empty-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12.75L9 16.5L19 6.5" stroke="currentColor" stroke-width="1.75"
+                                        stroke-linecap="round" stroke-linejoin="round" opacity="0.65" />
+                                    <path d="M4 4H20V20H4V4Z" stroke="currentColor" stroke-width="1.4" opacity="0.32"
+                                        stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 id="emptyStateTitle">Nothing captured yet</h3>
+                                <p id="emptyStateText">Start a recording or run the simulator to populate the editor with
+                                    timestamped accelerometer samples.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="readout readout-y">
-                    <span class="readout-label">Y</span>
-                    <span id="valY" class="readout-value">0.00</span>
-                    <span class="readout-unit">m/s²</span>
-                </div>
-                <div class="readout readout-z">
-                    <span class="readout-label">Z</span>
-                    <span id="valZ" class="readout-value">0.00</span>
-                    <span class="readout-unit">m/s²</span>
-                </div>
-                <div class="readout readout-mag">
-                    <span class="readout-label">|g|</span>
-                    <span id="valMag" class="readout-value">0.00</span>
-                    <span class="readout-unit">m/s²</span>
-                </div>
-            </div>
+            </section>
 
-            <div class="controls">
-                <button id="startBtn" type="button" class="btn btn-success" hidden>Start recording</button>
-                <button id="stopBtn" type="button" class="btn btn-danger" hidden>Stop recording</button>
-                <button id="simBtn" type="button" class="btn btn-secondary">Simulate data</button>
-            </div>
+            <section id="privacy" class="info-grid" data-nav-section>
+                <article class="surface surface-secondary info-card" data-reveal>
+                    <span class="info-icon" aria-hidden="true">◎</span>
+                    <div>
+                        <p class="eyebrow">Privacy first</p>
+                        <h2>Your data stays with you</h2>
+                        <p>Sensor readings never leave your device. The entire workflow runs locally in your browser with
+                            no servers or tracking.</p>
+                    </div>
+                </article>
 
-            <div class="chart-wrap">
-                <canvas id="chart" role="img" aria-label="Live time-series chart of X, Y and Z acceleration"></canvas>
-                <p class="chart-hint">Live chart — X <span class="k-x">■</span> &nbsp; Y <span class="k-y">■</span>
-                    &nbsp; Z <span class="k-z">■</span></p>
-            </div>
+                <article class="surface surface-secondary info-card" data-reveal>
+                    <span class="info-icon" aria-hidden="true">⌁</span>
+                    <div>
+                        <p class="eyebrow">Compatibility</p>
+                        <h2>Designed for real devices and desktop previews</h2>
+                        <p>The app uses the <code>DeviceMotion</code> API over HTTPS and includes a built-in simulation mode
+                            so you can validate flows on laptops and unsupported browsers.</p>
+                    </div>
+                </article>
+            </section>
 
-            <div id="stats" class="stats" hidden>
-                <div class="stat"><span class="stat-label">Samples</span><span id="statCount">0</span></div>
-                <div class="stat"><span class="stat-label">Duration</span><span id="statDuration">0.0s</span></div>
-                <div class="stat"><span class="stat-label">Sample rate</span><span id="statRate">0 Hz</span></div>
-            </div>
-        </section>
+            <p id="err" class="toast" role="status" aria-live="polite" hidden></p>
+        </main>
 
-        <!-- Recorded data -->
-        <section id="data-section" class="card" hidden>
-            <div class="card-header">
-                <h2>Recorded data</h2>
+        <footer class="site-footer">
+            <div class="container footer-inner glass-secondary">
+                <p>Uses the <code>DeviceMotion</code> API — requires HTTPS and a motion-capable device.</p>
+                <p>Data never leaves your device.</p>
             </div>
-            <div class="actions">
-                <button id="copyBtn" type="button" class="btn btn-primary">Copy JSON</button>
-                <button id="downloadJsonBtn" type="button" class="btn btn-primary">Download JSON</button>
-                <button id="downloadCsvBtn" type="button" class="btn btn-secondary">Download CSV</button>
-                <button id="clearBtn" type="button" class="btn btn-danger">Clear</button>
-            </div>
-            <label class="field-label" for="textarea">Data — edit and re-export</label>
-            <textarea id="textarea" class="textarea" rows="10" spellcheck="false"
-                placeholder='[{"t":0,"x":0.12,"y":0.03,"z":9.81,"mag":9.81}, ...]'></textarea>
-        </section>
-
-        <p id="err" role="alert" hidden></p>
-    </main>
-
-    <footer class="site-footer">
-        <p>Uses the <code>DeviceMotion</code> API — requires HTTPS and a motion-capable device. Data never leaves your
-            device.</p>
-    </footer>
+        </footer>
+    </div>
 
     <script src="js/app.js"></script>
 </body>

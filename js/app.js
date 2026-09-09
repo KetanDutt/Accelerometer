@@ -24,43 +24,64 @@
         valY: el("valY"),
         valZ: el("valZ"),
         valMag: el("valMag"),
+        readoutX: el("readoutX"),
+        readoutY: el("readoutY"),
+        readoutZ: el("readoutZ"),
+        readoutMag: el("readoutMag"),
         chart: el("chart"),
         stats: el("stats"),
         statCount: el("statCount"),
         statDuration: el("statDuration"),
         statRate: el("statRate"),
+        sessionStatus: el("sessionStatus"),
+        liveNote: el("liveNote"),
+        sensorStatus: el("sensorStatus"),
+        sourceStatus: el("sourceStatus"),
+        modeStatus: el("modeStatus"),
+        stateStatus: el("stateStatus"),
         dataSection: el("data-section"),
+        dataSummary: el("dataSummary"),
+        emptyState: el("emptyState"),
+        emptyStateTitle: el("emptyStateTitle"),
+        emptyStateText: el("emptyStateText"),
         textarea: el("textarea"),
         copyBtn: el("copyBtn"),
         downloadJsonBtn: el("downloadJsonBtn"),
         downloadCsvBtn: el("downloadCsvBtn"),
         clearBtn: el("clearBtn"),
         err: el("err"),
+        navLinks: Array.from(document.querySelectorAll(".nav-link")),
+        navSections: Array.from(document.querySelectorAll("[data-nav-section]")),
+        revealNodes: Array.from(document.querySelectorAll("[data-reveal]")),
     };
 
     // ---------- State ----------
     const state = {
-        sensorEnabled: false, // real device motion granted/available
-        simRunning: false,    // synthetic demo data generator is on
-        recording: false,     // currently recording samples
-        data: [],             // recorded samples: { t, x, y, z, mag }
-        rolling: [],          // rolling buffer of recent samples for the live chart
-        startTime: 0,         // performance.now() when recording started
-        simTime: 0,           // elapsed ms of the simulation
+        sensorEnabled: false,
+        simRunning: false,
+        recording: false,
+        data: [],
+        rolling: [],
+        startTime: 0,
+        simTime: 0,
         simTimer: null,
         rafId: null,
         lastX: 0,
         lastY: 0,
         lastZ: 0,
+        noticeTimer: null,
+        hideNoticeTimer: null,
+        revealObserver: null,
+        navObserver: null,
+        prefersReducedMotion: window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     };
 
-    // Keep the live chart cheap by limiting how many samples we draw.
     const MAX_ROLLING = 600;
-    const SIM_INTERVAL_MS = 16; // ~60 Hz simulated sampling
+    const SIM_INTERVAL_MS = 16;
 
     // ---------- Helpers ----------
     function format(n, digits = 2) {
-        if (!Number.isFinite(n)) return "0.00";
+        if (!Number.isFinite(n)) return Number(0).toFixed(digits);
         return Number(n).toFixed(digits);
     }
 
@@ -68,29 +89,100 @@
         return (typeof v === "number" && Number.isFinite(v)) ? v : fallback;
     }
 
+    function cssVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function hexToRgb(hex) {
+        const value = String(hex || "").replace("#", "").trim();
+        if (value.length !== 6) return null;
+        const num = Number.parseInt(value, 16);
+        if (!Number.isFinite(num)) return null;
+        return {
+            r: (num >> 16) & 255,
+            g: (num >> 8) & 255,
+            b: num & 255,
+        };
+    }
+
+    function withAlpha(color, alpha) {
+        if (!color) return `rgba(255, 255, 255, ${alpha})`;
+        if (color.startsWith("rgba(")) {
+            return color.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, `rgba($1,$2,$3,${alpha})`);
+        }
+        if (color.startsWith("rgb(")) {
+            return color.replace(/rgb\(([^,]+),([^,]+),([^,]+)\)/, `rgba($1,$2,$3,${alpha})`);
+        }
+        if (color.startsWith("#")) {
+            const rgb = hexToRgb(color);
+            if (rgb) return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+        }
+        return color;
+    }
+
+    function setNotice(message, type) {
+        clearTimeout(state.noticeTimer);
+        clearTimeout(state.hideNoticeTimer);
+
+        els.err.hidden = false;
+        els.err.classList.remove("toast-success", "toast-error", "is-visible");
+        els.err.classList.add(type === "error" ? "toast-error" : "toast-success");
+        els.err.textContent = message;
+        els.err.setAttribute("role", type === "error" ? "alert" : "status");
+        els.err.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
+
+        requestAnimationFrame(() => {
+            els.err.classList.add("is-visible");
+        });
+    }
+
     function showError(message) {
-        els.err.classList.remove("notice-success");
-        els.err.classList.add("notice-error");
-        els.err.textContent = message;
-        els.err.hidden = !message;
+        setNotice(message, "error");
     }
 
-    // Success feedback reuses the notice element but styles it as positive.
     function showSuccess(message) {
-        els.err.classList.remove("notice-error");
-        els.err.classList.add("notice-success");
-        els.err.textContent = message;
-        els.err.hidden = !message;
+        setNotice(message, "success");
     }
 
-    function clearNotice() {
-        els.err.hidden = true;
-        els.err.textContent = "";
+    function clearNotice(immediate) {
+        clearTimeout(state.noticeTimer);
+        clearTimeout(state.hideNoticeTimer);
+
+        if (els.err.hidden) return;
+        els.err.classList.remove("is-visible");
+
+        const hide = function () {
+            els.err.hidden = true;
+            els.err.textContent = "";
+            els.err.classList.remove("toast-success", "toast-error");
+        };
+
+        if (immediate || state.prefersReducedMotion) {
+            hide();
+            return;
+        }
+
+        state.hideNoticeTimer = setTimeout(hide, 220);
+    }
+
+    function flashSuccess(message) {
+        showSuccess(message);
+        state.noticeTimer = setTimeout(() => clearNotice(false), 2200);
+    }
+
+    function setReadoutLevel(node, value, maxAbs) {
+        if (!node) return;
+        const normalized = Math.max(0, Math.min(Math.abs(numberOr(value)) / maxAbs, 1));
+        node.style.setProperty("--level", normalized.toFixed(3));
+    }
+
+    function setChipVariant(node, variant) {
+        if (!node) return;
+        node.classList.remove("status-chip-live", "status-chip-warning", "status-chip-danger", "status-chip-subtle");
+        node.classList.add(`status-chip-${variant}`);
     }
 
     // ---------- Sample processing ----------
-    // Accepts { x, y, z } and drives the readout, the rolling chart buffer
-    // and (when recording) the persistent dataset.
     function processSample(accel) {
         const x = numberOr(accel.x);
         const y = numberOr(accel.y);
@@ -121,11 +213,15 @@
         els.valY.textContent = format(y);
         els.valZ.textContent = format(z);
         els.valMag.textContent = format(mag);
+
+        setReadoutLevel(els.readoutX, x, 12);
+        setReadoutLevel(els.readoutY, y, 12);
+        setReadoutLevel(els.readoutZ, z - 9.8, 12);
+        setReadoutLevel(els.readoutMag, mag, 20);
     }
 
     // ---------- DeviceMotion ----------
     function onDeviceMotion(e) {
-        // Prefer the acceleration including gravity; fall back gracefully.
         const a = e.accelerationIncludingGravity || e.acceleration || {};
         processSample({ x: a.x, y: a.y, z: a.z });
     }
@@ -138,7 +234,8 @@
             window.addEventListener("devicemotion", onDeviceMotion, { passive: true });
         }
         updateControls();
-        clearNotice();
+        refreshDataSection();
+        clearNotice(true);
     }
 
     async function requestPermission() {
@@ -157,6 +254,8 @@
     function showPermission() {
         els.permissionSection.hidden = false;
         els.unsupportedSection.hidden = true;
+        updateControls();
+        refreshDataSection();
     }
 
     function showUnsupported(note) {
@@ -164,6 +263,78 @@
         els.unsupportedNote.textContent = note || "Motion sensors are not available on this device.";
         els.permissionSection.hidden = true;
         updateControls();
+        refreshDataSection();
+    }
+
+    // ---------- UI status ----------
+    function updateStatusText() {
+        let headerStatus = "Checking sensors";
+        let headerVariant = "subtle";
+        let sessionTitle = "Preparing workspace";
+        let sessionNote = "Allow motion access or start the simulator to preview the full workflow on any device.";
+        let sourceStatus = "Checking availability";
+        let modeLabel = "Idle";
+        let stateLabel = "Preparing";
+        let bodyMode = "idle";
+
+        if (state.recording) {
+            headerStatus = "Recording live";
+            headerVariant = "danger";
+            sessionTitle = "Recording is active";
+            sessionNote = "Streaming samples are being captured now. Stop the session to review and export the dataset.";
+            sourceStatus = state.simRunning ? "Simulated source" : "Device sensors";
+            modeLabel = "Recording";
+            stateLabel = `${state.data.length} samples captured`;
+            bodyMode = "recording";
+        } else if (state.simRunning) {
+            headerStatus = "Simulation active";
+            headerVariant = "live";
+            sessionTitle = "Simulation preview is running";
+            sessionNote = "Synthetic motion data is driving the live chart so you can validate the complete workflow on desktop.";
+            sourceStatus = state.sensorEnabled ? "Device + simulation" : "Simulated source";
+            modeLabel = "Simulation";
+            stateLabel = "Previewing motion";
+            bodyMode = "simulation";
+        } else if (state.sensorEnabled) {
+            headerStatus = "Sensor ready";
+            headerVariant = "live";
+            sessionTitle = "Ready to capture";
+            sessionNote = "Motion access is enabled. Start recording whenever you want to create a new dataset.";
+            sourceStatus = "Device sensors";
+            modeLabel = "Ready";
+            stateLabel = "Awaiting capture";
+            bodyMode = "ready";
+        } else if (!els.permissionSection.hidden) {
+            headerStatus = "Permission needed";
+            headerVariant = "warning";
+            sessionTitle = "Waiting for motion access";
+            sessionNote = "Grant sensor permission to capture real accelerometer data on supported mobile browsers.";
+            sourceStatus = "Awaiting permission";
+            modeLabel = "Pending";
+            stateLabel = "Permission required";
+        } else if (!els.unsupportedSection.hidden) {
+            headerStatus = "Motion unavailable";
+            headerVariant = "warning";
+            sessionTitle = "Use simulation mode";
+            sessionNote = "This device or browser does not expose the accelerometer. The simulator lets you test every export flow anyway.";
+            sourceStatus = "Unavailable";
+            modeLabel = "Fallback";
+            stateLabel = "Simulation available";
+        }
+
+        if (els.sensorStatus) {
+            els.sensorStatus.textContent = headerStatus;
+            setChipVariant(els.sensorStatus, headerVariant);
+        }
+        if (els.modeStatus) {
+            els.modeStatus.textContent = modeLabel;
+            setChipVariant(els.modeStatus, headerVariant === "danger" ? "danger" : headerVariant === "warning" ? "warning" : headerVariant === "live" ? "live" : "subtle");
+        }
+        if (els.sessionStatus) els.sessionStatus.textContent = sessionTitle;
+        if (els.liveNote) els.liveNote.textContent = sessionNote;
+        if (els.sourceStatus) els.sourceStatus.textContent = sourceStatus;
+        if (els.stateStatus) els.stateStatus.textContent = stateLabel;
+        document.body.dataset.mode = bodyMode;
     }
 
     // ---------- Controls ----------
@@ -172,6 +343,8 @@
         els.startBtn.hidden = !canRecord || state.recording;
         els.stopBtn.hidden = !state.recording;
         els.recordingBadge.hidden = !state.recording;
+        updateStatusText();
+        refreshDataSection();
     }
 
     function startRecording() {
@@ -182,9 +355,10 @@
         state.recording = true;
         state.data = [];
         state.startTime = performance.now();
-        els.dataSection.hidden = true; // keep the data panel out of the way while streaming
+        els.textarea.value = "";
         updateControls();
-        clearNotice();
+        clearNotice(true);
+        scheduleRender();
     }
 
     function stopRecording() {
@@ -193,10 +367,11 @@
 
         if (state.data.length > 0) {
             els.textarea.value = JSON.stringify(state.data, null, 2);
-            els.dataSection.hidden = false;
         } else {
-            els.dataSection.hidden = true;
+            els.textarea.value = "";
         }
+
+        refreshDataSection();
         scheduleRender();
     }
 
@@ -204,35 +379,34 @@
         state.data = [];
         state.rolling = [];
         els.textarea.value = "";
-        els.dataSection.hidden = true;
+        updateReadout(0, 0, 0, 0);
         updateStats();
+        refreshDataSection();
         scheduleRender();
-        clearNotice();
+        clearNotice(true);
     }
 
-    // ---------- Simulation (desktop demo / preview) ----------
+    // ---------- Simulation ----------
     function toggleSim() {
-        if (state.simRunning) {
-            stopSim();
-        } else {
-            startSim();
-        }
+        if (state.simRunning) stopSim();
+        else startSim();
     }
 
     function startSim() {
         state.simRunning = true;
         state.simTime = 0;
-        els.simBtn.textContent = "Stop simulate";
+        els.simBtn.textContent = "Stop simulation";
         els.simBtn.classList.add("active");
+
         state.simTimer = setInterval(() => {
             state.simTime += SIM_INTERVAL_MS;
             const t = state.simTime / 1000;
-            // A gentle 3-axis oscillation so X/Y/Z are all visibly different.
             const x = Math.sin(2 * Math.PI * 0.5 * t) * 2.5;
             const y = Math.cos(2 * Math.PI * 0.5 * t) * 2.5;
             const z = Math.sin(2 * Math.PI * 0.2 * t) * 3 + 9.8;
             processSample({ x, y, z });
         }, SIM_INTERVAL_MS);
+
         updateControls();
     }
 
@@ -245,7 +419,7 @@
         updateControls();
     }
 
-    // ---------- Stats ----------
+    // ---------- Stats + export state ----------
     function updateStats() {
         const hasData = state.recording || state.data.length > 0;
         els.stats.hidden = !hasData;
@@ -265,9 +439,91 @@
         els.statCount.textContent = String(state.data.length);
         els.statDuration.textContent = `${format(seconds, 1)}s`;
         els.statRate.textContent = `${Math.round(rate)} Hz`;
+
+        if (state.recording) {
+            if (els.stateStatus) els.stateStatus.textContent = `${state.data.length} samples captured`;
+            if (els.dataSummary) {
+                els.dataSummary.textContent = `${state.data.length} samples streaming · stop to prepare export`;
+            }
+        }
     }
 
-    // ---------- Rendering (throttled via requestAnimationFrame) ----------
+    function parseEditorSamples() {
+        const raw = els.textarea.value.trim();
+        if (!raw) {
+            return {
+                hasText: false,
+                valid: false,
+                samples: state.data,
+            };
+        }
+
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                return {
+                    hasText: true,
+                    valid: true,
+                    samples: parsed,
+                };
+            }
+        } catch (_) {
+            // Ignore parse errors. The editor can remain free-form.
+        }
+
+        return {
+            hasText: true,
+            valid: false,
+            samples: state.data,
+        };
+    }
+
+    function getActiveSamples() {
+        const parsed = parseEditorSamples();
+        return parsed.valid ? parsed.samples : state.data;
+    }
+
+    function refreshDataSection() {
+        const parsed = parseEditorSamples();
+        const activeSamples = getActiveSamples();
+        const hasRecordedData = state.data.length > 0;
+        const canExport = !state.recording && activeSamples.length > 0;
+        const canClear = !state.recording && (hasRecordedData || parsed.hasText);
+        const showEmpty = state.recording || (!parsed.hasText && !hasRecordedData);
+
+        els.copyBtn.disabled = !canExport;
+        els.downloadJsonBtn.disabled = !canExport;
+        els.downloadCsvBtn.disabled = !canExport;
+        els.clearBtn.disabled = !canClear;
+
+        els.dataSection.classList.toggle("is-empty", showEmpty);
+        if (els.emptyState) els.emptyState.hidden = !showEmpty;
+
+        if (state.recording) {
+            els.dataSummary.textContent = `${state.data.length} samples streaming · stop to prepare export`;
+            els.emptyStateTitle.textContent = "Recording in progress";
+            els.emptyStateText.textContent = "Stop the current session to populate the editor with timestamped accelerometer samples.";
+            return;
+        }
+
+        if (parsed.hasText && !parsed.valid) {
+            els.dataSummary.textContent = hasRecordedData
+                ? "Editor contains invalid JSON · exports will use the last recorded dataset"
+                : "Editor contains invalid JSON";
+            return;
+        }
+
+        if (parsed.valid) {
+            els.dataSummary.textContent = `${parsed.samples.length} sample${parsed.samples.length === 1 ? "" : "s"} ready`;
+            return;
+        }
+
+        els.dataSummary.textContent = "No samples recorded yet";
+        els.emptyStateTitle.textContent = "Nothing captured yet";
+        els.emptyStateText.textContent = "Start a recording or run the simulator to populate the editor with timestamped accelerometer samples.";
+    }
+
+    // ---------- Rendering ----------
     function scheduleRender() {
         if (state.rafId !== null) return;
         state.rafId = requestAnimationFrame(() => {
@@ -294,35 +550,52 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
 
+        const palette = {
+            grid: cssVar("--chart-grid"),
+            axis: cssVar("--chart-axis"),
+            x: cssVar("--chart-x"),
+            y: cssVar("--chart-y"),
+            z: cssVar("--chart-z"),
+        };
+
+        drawBackdrop(ctx, w, h, palette);
+
         const samples = state.rolling;
         if (samples.length < 2) {
-            drawGrid(ctx, w, h, 0);
+            drawGrid(ctx, w, h, palette);
             return;
         }
 
-        // Find a symmetric scale around 0 using the largest absolute value.
         let maxAbs = 1;
         for (const s of samples) {
             maxAbs = Math.max(maxAbs, Math.abs(s.x), Math.abs(s.y), Math.abs(s.z));
         }
-        maxAbs = Math.ceil(maxAbs * 1.15);
+        maxAbs = Math.max(2, Math.ceil(maxAbs * 1.15));
 
-        drawGrid(ctx, w, h, maxAbs);
+        drawGrid(ctx, w, h, palette);
 
         const xToPx = (i) => (i / (samples.length - 1)) * (w - 1);
-        const yToPx = (v) => h / 2 - (v / maxAbs) * (h / 2 - 8);
+        const yToPx = (v) => h / 2 - (v / maxAbs) * (h / 2 - 18);
+        const baseline = h / 2;
 
-        drawSeries(ctx, samples, "x", xToPx, yToPx, "#38bdf8");
-        drawSeries(ctx, samples, "y", xToPx, yToPx, "#4ade80");
-        drawSeries(ctx, samples, "z", xToPx, yToPx, "#fbbf24");
+        drawSeries(ctx, samples, "x", xToPx, yToPx, baseline, palette.x);
+        drawSeries(ctx, samples, "y", xToPx, yToPx, baseline, palette.y);
+        drawSeries(ctx, samples, "z", xToPx, yToPx, baseline, palette.z);
     }
 
-    function drawGrid(ctx, w, h, maxAbs) {
-        ctx.strokeStyle = "#27334a";
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.6;
+    function drawBackdrop(ctx, w, h, palette) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, withAlpha(palette.axis, 0.08));
+        gradient.addColorStop(1, withAlpha(palette.axis, 0.01));
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+    }
 
-        // Horizontal grid lines.
+    function drawGrid(ctx, w, h, palette) {
+        ctx.save();
+        ctx.strokeStyle = palette.grid;
+        ctx.lineWidth = 1;
+
         const rows = 4;
         for (let i = 0; i <= rows; i++) {
             const y = (i / rows) * h;
@@ -332,7 +605,6 @@
             ctx.stroke();
         }
 
-        // Vertical grid lines.
         const cols = 8;
         for (let i = 0; i <= cols; i++) {
             const x = (i / cols) * w;
@@ -342,49 +614,61 @@
             ctx.stroke();
         }
 
-        // Zero axis.
-        ctx.strokeStyle = "#3f4d68";
-        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = palette.axis;
         ctx.beginPath();
         ctx.moveTo(0, h / 2);
         ctx.lineTo(w, h / 2);
         ctx.stroke();
-
-        ctx.globalAlpha = 1;
+        ctx.restore();
     }
 
-    function drawSeries(ctx, samples, key, xToPx, yToPx, color) {
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.75;
-        ctx.lineJoin = "round";
-        ctx.lineCap = "round";
+    function drawSeries(ctx, samples, key, xToPx, yToPx, baseline, strokeColor) {
+        if (!samples.length) return;
 
+        ctx.save();
+
+        const fillGradient = ctx.createLinearGradient(0, 0, 0, baseline + 70);
+        fillGradient.addColorStop(0, withAlpha(strokeColor, 0.18));
+        fillGradient.addColorStop(1, withAlpha(strokeColor, 0));
+
+        ctx.beginPath();
         for (let i = 0; i < samples.length; i++) {
             const x = xToPx(i);
             const y = yToPx(samples[i][key]);
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
         }
+        ctx.lineTo(xToPx(samples.length - 1), baseline);
+        ctx.lineTo(xToPx(0), baseline);
+        ctx.closePath();
+        ctx.fillStyle = fillGradient;
+        ctx.fill();
+
+        ctx.beginPath();
+        for (let i = 0; i < samples.length; i++) {
+            const x = xToPx(i);
+            const y = yToPx(samples[i][key]);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
         ctx.stroke();
+
+        const last = samples[samples.length - 1];
+        const endX = xToPx(samples.length - 1);
+        const endY = yToPx(last[key]);
+        ctx.beginPath();
+        ctx.fillStyle = strokeColor;
+        ctx.arc(endX, endY, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
     }
 
     // ---------- Export ----------
-    // When the textarea has been edited to a valid JSON array, prefer that,
-    // otherwise fall back to the recorded data.
-    function getActiveSamples() {
-        const raw = els.textarea.value.trim();
-        if (raw) {
-            try {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) return parsed;
-            } catch (_) {
-                // Fall through to recorded data if the edit is invalid.
-            }
-        }
-        return state.data;
-    }
-
     function samplesToCsv(samples) {
         const header = "time,x,y,z,magnitude";
         const rows = samples.map((s) => {
@@ -450,7 +734,7 @@
         try {
             await navigator.clipboard.writeText(text);
             flashSuccess("Copied JSON to clipboard.");
-        } catch (err) {
+        } catch (_) {
             fallbackCopy(text);
         }
     }
@@ -465,12 +749,14 @@
         document.body.appendChild(ta);
         ta.focus();
         ta.select();
+
         let ok = false;
         try {
             ok = document.execCommand("copy");
-        } catch (err) {
+        } catch (_) {
             ok = false;
         }
+
         document.body.removeChild(ta);
         if (ok) {
             flashSuccess("Copied JSON to clipboard.");
@@ -479,10 +765,64 @@
         }
     }
 
-    // Small, dependency-free toast so feedback doesn't need a library.
-    function flashSuccess(message) {
-        showSuccess(message);
-        setTimeout(clearNotice, 2400);
+    // ---------- Navigation + motion polish ----------
+    function bindScrollState() {
+        const onScroll = () => {
+            document.body.classList.toggle("is-scrolled", window.scrollY > 12);
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+    }
+
+    function setActiveNav(id) {
+        els.navLinks.forEach((link) => {
+            const isActive = link.getAttribute("href") === `#${id}`;
+            link.classList.toggle("is-active", isActive);
+        });
+    }
+
+    function bindSectionTracking() {
+        if (!els.navLinks.length || !els.navSections.length) return;
+
+        if (!("IntersectionObserver" in window)) {
+            setActiveNav(els.navSections[0].id);
+            return;
+        }
+
+        state.navObserver = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter((entry) => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+            if (visible) {
+                setActiveNav(visible.target.id);
+            }
+        }, {
+            rootMargin: "-25% 0px -50% 0px",
+            threshold: [0.2, 0.45, 0.7],
+        });
+
+        els.navSections.forEach((section) => state.navObserver.observe(section));
+    }
+
+    function bindRevealAnimations() {
+        if (state.prefersReducedMotion || !("IntersectionObserver" in window)) {
+            els.revealNodes.forEach((node) => node.classList.add("is-visible"));
+            return;
+        }
+
+        state.revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add("is-visible");
+                state.revealObserver.unobserve(entry.target);
+            });
+        }, {
+            rootMargin: "0px 0px -10% 0px",
+            threshold: 0.18,
+        });
+
+        els.revealNodes.forEach((node) => state.revealObserver.observe(node));
     }
 
     // ---------- Binding ----------
@@ -495,24 +835,37 @@
         els.downloadJsonBtn.addEventListener("click", downloadJson);
         els.downloadCsvBtn.addEventListener("click", downloadCsv);
         els.simBtn.addEventListener("click", toggleSim);
+        els.textarea.addEventListener("input", refreshDataSection);
         window.addEventListener("resize", scheduleRender);
+
+        if (window.matchMedia) {
+            const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
+            if (typeof colorScheme.addEventListener === "function") {
+                colorScheme.addEventListener("change", scheduleRender);
+            } else if (typeof colorScheme.addListener === "function") {
+                colorScheme.addListener(scheduleRender);
+            }
+        }
     }
 
     // ---------- Init ----------
     function init() {
         bindEvents();
-        updateControls();
+        bindScrollState();
+        bindSectionTracking();
+        bindRevealAnimations();
 
         if (typeof window.DeviceMotionEvent === "undefined") {
             showUnsupported("This browser does not support the DeviceMotion API. Use the simulated data above.");
         } else if (typeof DeviceMotionEvent.requestPermission === "function") {
-            // iOS 13+ and some Android browsers require an explicit permission.
             showPermission();
         } else {
             enableSensor();
         }
 
-        // Draw an empty chart so the card looks intentional on load.
+        updateReadout(0, 0, 0, 0);
+        updateControls();
+        refreshDataSection();
         requestAnimationFrame(renderChart);
     }
 
