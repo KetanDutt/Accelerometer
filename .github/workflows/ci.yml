@@ -14,7 +14,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate JS syntax
-        run: node --check js/app.js
+        run: |
+          for f in js/*.js; do
+            echo "node --check $f"
+            node --check "$f"
+          done
 
       - name: Check for duplicate element IDs
         run: |
@@ -43,7 +47,8 @@ jobs:
           python3 - <<'PY'
           import re
           html = open('index.html').read()
-          js = open('js/app.js').read()
+          import glob
+          js = "".join(open(f).read() for f in sorted(glob.glob('js/*.js')))
           html_ids = set(re.findall(r'id="([a-zA-Z0-9-]+)"', html))
           refs = set(re.findall(r'el\(["\']([a-zA-Z0-9-]+)["\']\)', js))
           refs |= set(re.findall(r'getElementById\(["\']([a-zA-Z0-9-]+)["\']\)', js))

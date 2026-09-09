@@ -13,6 +13,7 @@ A lightweight, dependency-free web app for **recording your device's acceleromet
 ## Features
 
 - 📱 **Reads the real accelerometer** via the native `DeviceMotion` API on any motion-capable device.
+- 🧊 **Liquid Glass interface** — a tokenised material system with depth, translucency and calm motion, in light *and* dark themes.
 - 🧭 **3-axis readout** (X, Y, Z) plus the **magnitude** (|g|), live-updating.
 - 📈 **Real-time chart** of X, Y and Z over time, drawn with a dependency-free `<canvas>` renderer.
 - ⏺ **Record / stop / clear** with live stats: sample count, duration, and sample rate (Hz).
@@ -20,7 +21,9 @@ A lightweight, dependency-free web app for **recording your device's acceleromet
 - 📤 **Export** the recorded data as **JSON** or **CSV** (comma-separated with header row), or **copy** it to the clipboard.
 - ✏️ **Edit & re-export** — the exported data appears in an editable textarea, so you can trim, transform, or manually craft data and re-export it.
 - 🛰 **Permission flow** — requests iOS 13+ / modern-Android motion permission properly, with graceful fallbacks and clear error messages.
-- ♿ **Accessible, responsive, dark UI** built with semantic HTML, ARIA labels and `prefers-reduced-motion` support.
+- 🌗 **Appearance control** — Auto / Light / Dark plus a **Reduce motion** switch, both remembered between visits.
+- 📊 **Inspectable chart** — hover or use the keyboard to read exact values at any sample, and toggle X/Y/Z series.
+- ♿ **Accessible, responsive UI** built with semantic HTML, ARIA labels, visible focus, WCAG-checked contrast and `prefers-reduced-motion` / `prefers-reduced-transparency` support.
 
 ## Quick start
 
@@ -29,6 +32,8 @@ A lightweight, dependency-free web app for **recording your device's acceleromet
 3. Click **Start recording**, move your device, then click **Stop recording**.
 4. **Copy**, **Download JSON**, or **Download CSV**.
 5. On a desktop, click **Simulate data** to see the full flow without a sensor.
+6. Hover (or arrow-key) across the chart to inspect individual samples; use the
+   appearance button in the header to switch theme or reduce motion.
 
 That's it — no build step, no install, no server.
 
@@ -56,21 +61,29 @@ The full export is a JSON **array** of such samples. CSV exports include a heade
 | [docs/USAGE.md](docs/USAGE.md) | End-user guide |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Developer & contribution guide |
 | [docs/DATA_FORMAT.md](docs/DATA_FORMAT.md) | Data schema and file format |
+| [docs/DESIGN.md](docs/DESIGN.md) | Design system: materials, tokens, motion, accessibility |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Version history & migration notes |
 
 ## Project structure
 
 ```
 Accelerometer/
-├── index.html          # Markup / layout
+├── index.html          # Markup, icon sprite and ambient background
 ├── css/
-│   └── style.css       # Styling (dark, responsive, no framework)
+│   ├── tokens.css      # Design tokens (colours, materials, motion, layers)
+│   ├── base.css        # Reset, ambient background, typography, focus
+│   ├── components.css  # Glass materials and every component
+│   ├── layout.css      # Page structure, appbar, dock, responsive rules
+│   └── motion.css      # Keyframes, reveals, preference media queries
 ├── js/
-│   └── app.js          # All application logic
+│   ├── ui.js           # Presentation layer (theme, menus, dialogs, reveals)
+│   └── app.js          # Application logic (sensor, chart, recording, export)
 ├── docs/               # Documentation
 ├── LICENSE             # MIT
 └── README.md
 ```
+
+See [docs/DESIGN.md](docs/DESIGN.md) for how the design system is put together.
 
 ## Browser support
 

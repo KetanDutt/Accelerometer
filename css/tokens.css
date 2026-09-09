@@ -1,0 +1,415 @@
+/* ==========================================================================
+   tokens.css — Accelerometer design tokens
+   --------------------------------------------------------------------------
+   The single source of truth for the Liquid Glass material system.
+   Every other stylesheet consumes these variables; no component should
+   hard-code a colour, radius, blur, duration or z-index of its own.
+
+   Order of layers (spec §16):
+     0  ambient background      10  page content
+     20 cards & panels          30  navigation / floating controls
+     40 popovers & menus        50  dialogs
+     60 toasts & notifications
+   ========================================================================== */
+
+:root {
+    color-scheme: light;
+
+    /* ---------- Type ---------------------------------------------------- */
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+        Inter, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+        "Liberation Mono", monospace;
+
+    --text-2xs: 0.6875rem;  /* 11px — uppercase labels only */
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.8125rem;   /* 13px */
+    --text-base: 0.9375rem; /* 15px */
+    --text-md: 1.0625rem;   /* 17px */
+    --text-lg: 1.25rem;     /* 20px */
+    --text-xl: 1.5rem;      /* 24px */
+    --text-2xl: clamp(1.6rem, 1.25rem + 1.4vw, 2.15rem);
+    --text-display: clamp(2.1rem, 1.3rem + 3.1vw, 3.35rem);
+
+    --leading-tight: 1.12;
+    --leading-snug: 1.3;
+    --leading-body: 1.62;
+
+    --tracking-display: -0.032em;
+    --tracking-heading: -0.02em;
+    --tracking-body: -0.006em;
+    --tracking-label: 0.09em;
+
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 590;
+    --weight-bold: 640;
+
+    /* ---------- Space --------------------------------------------------- */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-7: 2rem;
+    --space-8: 2.5rem;
+    --space-9: 3.25rem;
+    --space-10: 4.5rem;
+
+    --gap-inline: var(--space-3);
+    --gap-stack: var(--space-4);
+    --gap-section: clamp(1.1rem, 2.4vw, 1.75rem);
+    --gutter: clamp(1rem, 3.2vw, 2rem);
+    --measure: 68ch;
+
+    /* ---------- Geometry ------------------------------------------------ */
+    --radius-xs: 8px;
+    --radius-sm: 11px;
+    --radius-md: 15px;
+    --radius-lg: 20px;
+    --radius-xl: 26px;
+    --radius-2xl: 32px;
+    --radius-pill: 999px;
+
+    /* ---------- Blur (backdrop-filter) ---------------------------------- */
+    --blur-xs: 6px;
+    --blur-sm: 12px;
+    --blur-md: 20px;
+    --blur-lg: 32px;
+    --blur-xl: 44px;
+
+    /* ---------- Motion -------------------------------------------------- */
+    --dur-1: 120ms;  /* micro: hover, press, icon states      */
+    --dur-2: 180ms;  /* small: chips, menus, focus rings      */
+    --dur-3: 260ms;  /* standard: cards, panels, nav glide    */
+    --dur-4: 380ms;  /* structural: section reveals           */
+    --dur-5: 520ms;  /* large: dialogs, view transitions      */
+    --dur-meter: 220ms; /* live level meters: fast enough to track
+                           a 60 Hz signal without flickering   */
+
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.32, 1.24, 0.44, 1);
+
+    /* ---------- Layers -------------------------------------------------- */
+    --z-ambient: 0;
+    --z-content: 10;
+    --z-card: 20;
+    --z-nav: 30;
+    --z-popover: 40;
+    --z-dialog: 50;
+    --z-toast: 60;
+    /* Local stacking *inside* a component (labels over an indicator, a
+       tooltip over a canvas) — deliberately separate from the page layers. */
+    --z-within: 1;
+    --z-within-top: 2;
+
+    /* ---------- Light physics -------------------------------------------
+       Glass is lit from above: these are the shared highlight values that
+       give every material the same sense of a light source. They are pure
+       white/black by nature, which is why they are tokens rather than
+       per-component colours. */
+    --edge-light: rgba(255, 255, 255, 0.5);
+    --edge-light-soft: rgba(255, 255, 255, 0.16);
+    --sheen: rgba(255, 255, 255, 0.24);
+    --sheen-strong: rgba(255, 255, 255, 0.3);
+    --specular: rgba(255, 255, 255, 0.34);
+    --inset-light: rgba(255, 255, 255, 0.18);
+    --swatch-gloss: rgba(255, 255, 255, 0.4);
+
+    /* ---------- Metrics ------------------------------------------------- */
+    --appbar-h: 4.5rem;
+    --appbar-inset: 0.75rem;
+    --dock-h: 4.25rem;
+    --shell-max: 1180px;
+
+    /* ==================================================================
+       LIGHT PROFILE
+       ================================================================== */
+    --bg-base: #e9edf4;
+    --bg-deep: #dfe5ef;
+    --bg-ambient-a: rgba(96, 126, 255, 0.13);
+    --bg-ambient-b: rgba(112, 194, 180, 0.11);
+    --bg-ambient-c: rgba(176, 160, 255, 0.09);
+    --grain-opacity: 0.35;
+
+    --text-strong: #0e1420;
+    --text: #1b2231;
+    --text-secondary: #4b5568;
+    --text-tertiary: #66708a;
+    --text-on-accent: #ffffff;
+    --text-placeholder: rgba(102, 112, 138, 0.85);
+
+    --accent: #3f5ce0;
+    --accent-hover: #3550cc;
+    --accent-pressed: #2c44b3;
+    --accent-soft: rgba(63, 92, 224, 0.11);
+    --accent-border: rgba(63, 92, 224, 0.26);
+    --accent-contrast: #2f47bd;
+
+    --success: #1a7d59;
+    --success-hover: #167050;
+    --success-pressed: #12603f;
+    --success-soft: rgba(26, 125, 89, 0.12);
+    --success-border: rgba(26, 125, 89, 0.26);
+    /* Text-sized use of a status hue needs more contrast than its icon. */
+    --success-contrast: #126847;
+
+    --danger: #c0455a;
+    --danger-hover: #ab3b4e;
+    --danger-pressed: #95323f;
+    --danger-soft: rgba(192, 69, 90, 0.12);
+    --danger-border: rgba(192, 69, 90, 0.26);
+    --danger-contrast: #a03548;
+
+    --warning: #96701f;
+    --warning-contrast: #725514;
+    --warning-soft: rgba(150, 112, 31, 0.12);
+    --warning-border: rgba(150, 112, 31, 0.24);
+
+    /* ---------- Materials (glass) --------------------------------------- */
+    /* Each material exposes the same five properties so `.glass--*` classes
+       only ever re-point the variables — the rendering rule lives once, in
+       components.css. */
+    --mat-primary-bg: rgba(255, 255, 255, 0.6);
+    --mat-primary-blur: var(--blur-lg);
+    --mat-primary-sat: 1.7;
+    --mat-primary-border: rgba(255, 255, 255, 0.62);
+    --mat-primary-shadow: var(--shadow-2);
+    --mat-primary-highlight: rgba(255, 255, 255, 0.55);
+
+    --mat-secondary-bg: rgba(255, 255, 255, 0.4);
+    --mat-secondary-blur: var(--blur-md);
+    --mat-secondary-sat: 1.5;
+    --mat-secondary-border: rgba(255, 255, 255, 0.5);
+    --mat-secondary-shadow: var(--shadow-1);
+    --mat-secondary-highlight: rgba(255, 255, 255, 0.42);
+
+    --mat-tinted-bg: rgba(226, 232, 255, 0.62);
+    --mat-tinted-blur: var(--blur-lg);
+    --mat-tinted-sat: 1.6;
+    --mat-tinted-border: var(--accent-border);
+    --mat-tinted-shadow: var(--shadow-2);
+    --mat-tinted-highlight: rgba(255, 255, 255, 0.5);
+
+    --mat-warning-bg: rgba(250, 240, 219, 0.66);
+    --mat-warning-blur: var(--blur-lg);
+    --mat-warning-sat: 1.5;
+    --mat-warning-border: var(--warning-border);
+    --mat-warning-shadow: var(--shadow-2);
+    --mat-warning-highlight: rgba(255, 255, 255, 0.5);
+
+    --mat-floating-bg: rgba(255, 255, 255, 0.74);
+    --mat-floating-blur: var(--blur-xl);
+    --mat-floating-sat: 1.85;
+    --mat-floating-border: rgba(255, 255, 255, 0.7);
+    --mat-floating-shadow: var(--shadow-3);
+    --mat-floating-highlight: rgba(255, 255, 255, 0.7);
+
+    /* Inset material: used *inside* an already-blurred surface. It deliberately
+       has no backdrop-filter — double-blurring costs frames and turns muddy. */
+    --mat-inset-bg: rgba(255, 255, 255, 0.44);
+    --mat-inset-border: rgba(255, 255, 255, 0.6);
+    --mat-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    --mat-inset-highlight: rgba(255, 255, 255, 0.4);
+
+    /* Resting appbar: lighter than floating glass until content scrolls under it. */
+    --mat-appbar-rest-bg: rgba(255, 255, 255, 0.44);
+    --mat-appbar-rest-border: rgba(255, 255, 255, 0.42);
+
+    /* Active pill / indicator inside a segmented control. */
+    --pill-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    --pill-border: rgba(255, 255, 255, 0.75);
+
+    /* Opaque fallbacks for prefers-reduced-transparency. */
+    --solid-surface: #f7f9fc;
+    --solid-surface-2: #edf1f7;
+
+    --fill-quiet: rgba(255, 255, 255, 0.34);
+    --fill-quiet-hover: rgba(255, 255, 255, 0.56);
+    --fill-sunken: rgba(255, 255, 255, 0.5);
+    --hairline: rgba(20, 30, 60, 0.09);
+    --hairline-strong: rgba(20, 30, 60, 0.16);
+
+    --shadow-1: 0 1px 2px rgba(24, 36, 68, 0.05), 0 6px 18px rgba(24, 36, 68, 0.05);
+    --shadow-2: 0 1px 2px rgba(24, 36, 68, 0.04), 0 10px 30px rgba(24, 36, 68, 0.07);
+    --shadow-3: 0 2px 6px rgba(20, 30, 60, 0.06), 0 22px 54px rgba(20, 30, 60, 0.1);
+    --shadow-pressed: 0 1px 2px rgba(20, 30, 60, 0.06);
+    --shadow-focus: 0 0 0 3px rgba(63, 92, 224, 0.16);
+    /* Contact shadow under a filled button, tinted by the button's own hue. */
+    --shadow-contact: 0 1px 2px rgba(18, 28, 60, 0.14);
+
+    /* ---------- Data viz ------------------------------------------------ */
+    --series-x: #3d64e8;
+    --series-y: #17876a;
+    --series-z: #b3801f;
+    --series-x-soft: rgba(61, 100, 232, 0.2);
+    --series-y-soft: rgba(23, 135, 106, 0.18);
+    --series-z-soft: rgba(179, 128, 31, 0.18);
+    --chart-grid: rgba(40, 54, 92, 0.11);
+    --chart-axis: rgba(40, 54, 92, 0.26);
+    --chart-label: rgba(60, 72, 104, 0.72);
+    --chart-plot: rgba(255, 255, 255, 0.32);
+    --chart-cursor: rgba(40, 54, 92, 0.3);
+
+    /* ---------- Scrim --------------------------------------------------- */
+    --scrim: rgba(18, 26, 46, 0.32);
+    --scrim-blur: var(--blur-sm);
+}
+
+/* ======================================================================
+   DARK PROFILE — one block, applied for an explicit choice or when the
+   system preference is dark and the user has not overridden it.
+   ====================================================================== */
+:root[data-theme="dark"],
+:root[data-theme="auto"][data-system="dark"] {
+    color-scheme: dark;
+
+    --bg-base: #080b11;
+    --bg-deep: #04060a;
+    --bg-ambient-a: rgba(84, 116, 255, 0.16);
+    --bg-ambient-b: rgba(52, 156, 148, 0.11);
+    --bg-ambient-c: rgba(148, 120, 255, 0.1);
+    --grain-opacity: 0.24;
+
+    --text-strong: #f4f7fc;
+    --text: #e3e8f2;
+    --text-secondary: #aab4c8;
+    --text-tertiary: #8b95ab;
+    --text-on-accent: #0b1020;
+    --text-placeholder: rgba(139, 149, 171, 0.85);
+
+    --accent: #8ea2ff;
+    --accent-hover: #a0b1ff;
+    --accent-pressed: #7c91f5;
+    --accent-soft: rgba(142, 162, 255, 0.14);
+    --accent-border: rgba(142, 162, 255, 0.3);
+    --accent-contrast: #a9b8ff;
+
+    --success: #4fc79a;
+    --success-hover: #63d4aa;
+    --success-pressed: #3fb287;
+    --success-soft: rgba(79, 199, 154, 0.14);
+    --success-border: rgba(79, 199, 154, 0.3);
+
+    --danger: #f08a97;
+    --danger-hover: #f69fab;
+    --danger-pressed: #e37a88;
+    --danger-soft: rgba(240, 138, 151, 0.14);
+    --danger-border: rgba(240, 138, 151, 0.3);
+
+    --warning: #e0b366;
+    --warning-soft: rgba(224, 179, 102, 0.14);
+    --warning-border: rgba(224, 179, 102, 0.3);
+
+    --success-contrast: #6ad7ac;
+    --danger-contrast: #f6a3ae;
+    --warning-contrast: #e8c382;
+
+    --mat-primary-bg: rgba(255, 255, 255, 0.055);
+    --mat-primary-border: rgba(255, 255, 255, 0.11);
+    --mat-primary-shadow: var(--shadow-2);
+    --mat-primary-highlight: rgba(255, 255, 255, 0.09);
+
+    --mat-secondary-bg: rgba(255, 255, 255, 0.036);
+    --mat-secondary-border: rgba(255, 255, 255, 0.085);
+    --mat-secondary-shadow: var(--shadow-1);
+    --mat-secondary-highlight: rgba(255, 255, 255, 0.06);
+
+    --mat-tinted-bg: rgba(112, 132, 255, 0.13);
+    --mat-tinted-border: var(--accent-border);
+    --mat-tinted-highlight: rgba(255, 255, 255, 0.08);
+
+    --mat-warning-bg: rgba(224, 179, 102, 0.11);
+    --mat-warning-border: var(--warning-border);
+    --mat-warning-highlight: rgba(255, 255, 255, 0.07);
+
+    --mat-floating-bg: rgba(16, 21, 32, 0.72);
+    --mat-floating-border: rgba(255, 255, 255, 0.13);
+    --mat-floating-shadow: var(--shadow-3);
+    --mat-floating-highlight: rgba(255, 255, 255, 0.1);
+
+    --mat-inset-bg: rgba(255, 255, 255, 0.045);
+    --mat-inset-border: rgba(255, 255, 255, 0.09);
+    --mat-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --mat-inset-highlight: rgba(255, 255, 255, 0.05);
+
+    --mat-appbar-rest-bg: rgba(14, 19, 29, 0.4);
+    --mat-appbar-rest-border: rgba(255, 255, 255, 0.08);
+
+    --pill-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.07));
+    --pill-border: rgba(255, 255, 255, 0.14);
+
+    --solid-surface: #141a26;
+    --solid-surface-2: #10151f;
+
+    --fill-quiet: rgba(255, 255, 255, 0.06);
+    --fill-quiet-hover: rgba(255, 255, 255, 0.11);
+    --fill-sunken: rgba(0, 0, 0, 0.28);
+    --hairline: rgba(255, 255, 255, 0.09);
+    --hairline-strong: rgba(255, 255, 255, 0.16);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.24);
+    --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.3);
+    --shadow-3: 0 2px 8px rgba(0, 0, 0, 0.34), 0 26px 60px rgba(0, 0, 0, 0.42);
+    --shadow-pressed: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-focus: 0 0 0 3px rgba(142, 162, 255, 0.22);
+    --shadow-contact: 0 1px 2px rgba(0, 0, 0, 0.34);
+
+    --series-x: #8ba6ff;
+    --series-y: #4fc79a;
+    --series-z: #e2b569;
+    --series-x-soft: rgba(139, 166, 255, 0.2);
+    --series-y-soft: rgba(79, 199, 154, 0.17);
+    --series-z-soft: rgba(226, 181, 105, 0.17);
+    --chart-grid: rgba(190, 202, 228, 0.1);
+    --chart-axis: rgba(190, 202, 228, 0.22);
+    --chart-label: rgba(190, 202, 228, 0.6);
+    --chart-plot: rgba(255, 255, 255, 0.035);
+    --chart-cursor: rgba(210, 220, 240, 0.34);
+
+    --scrim: rgba(2, 4, 9, 0.6);
+}
+
+/* No-JS fallback: the app itself needs JavaScript, but the page should still
+   sit on the right base colour if a visitor has it disabled. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        color-scheme: dark;
+        --bg-base: #080b11;
+        --bg-deep: #04060a;
+        --text: #e3e8f2;
+        --text-strong: #f4f7fc;
+    }
+}
+
+/* ======================================================================
+   Preference overrides that change colour live here, next to the palette
+   they modify, rather than being scattered through the component sheets.
+   ====================================================================== */
+@media (prefers-contrast: more) {
+    :root {
+        --hairline: rgba(20, 30, 60, 0.28);
+        --hairline-strong: rgba(20, 30, 60, 0.45);
+        --text-secondary: #333d51;
+        --text-tertiary: #4a5468;
+    }
+
+    :root[data-theme="dark"],
+    :root[data-theme="auto"][data-system="dark"] {
+        --hairline: rgba(255, 255, 255, 0.28);
+        --hairline-strong: rgba(255, 255, 255, 0.42);
+        --text-secondary: #ccd4e4;
+        --text-tertiary: #b0bacd;
+    }
+}
+
+@media print {
+    :root {
+        --print-surface: #ffffff;
+        --print-border: #cccccc;
+        --print-text: #000000;
+    }
+}

@@ -1,0 +1,296 @@
+/* ==========================================================================
+   base.css — reset, ambient background (layer 0) and typography
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    position: relative;
+    margin: 0;
+    min-height: 100svh;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: var(--weight-regular);
+    line-height: var(--leading-body);
+    letter-spacing: var(--tracking-body);
+    color: var(--text);
+    background-color: var(--bg-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+/* ---------- Layer 0: ambient field ---------------------------------------
+   Extremely low-contrast colour fields. They should be almost invisible
+   until a glass surface drifts across them. No saturated blobs.            */
+.ambient {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-ambient);
+    pointer-events: none;
+    overflow: hidden;
+    background:
+        radial-gradient(120% 82% at 50% -18%, var(--bg-ambient-a), transparent 62%),
+        linear-gradient(178deg, var(--bg-base) 0%, var(--bg-base) 42%, var(--bg-deep) 100%);
+}
+
+.ambient__field {
+    position: absolute;
+    display: block;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.75;
+    will-change: transform;
+}
+
+.ambient__field--a {
+    top: -14vh;
+    left: -8vw;
+    width: 52vw;
+    height: 52vw;
+    min-width: 320px;
+    min-height: 320px;
+    background: var(--bg-ambient-a);
+    animation: drift-a 46s var(--ease-in-out) infinite;
+}
+
+.ambient__field--b {
+    top: 34vh;
+    right: -12vw;
+    width: 44vw;
+    height: 44vw;
+    min-width: 280px;
+    min-height: 280px;
+    background: var(--bg-ambient-b);
+    animation: drift-b 58s var(--ease-in-out) infinite;
+}
+
+.ambient__field--c {
+    bottom: -18vh;
+    left: 26vw;
+    width: 40vw;
+    height: 40vw;
+    min-width: 260px;
+    min-height: 260px;
+    background: var(--bg-ambient-c);
+    animation: drift-c 68s var(--ease-in-out) infinite;
+}
+
+/* Fine grain keeps large flat fields from banding on cheap displays. */
+.ambient__grain {
+    position: absolute;
+    inset: 0;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+}
+
+/* Small screens get a cheaper ambient layer: fewer blurred pixels to composite
+   means the glass above it stays smooth while scrolling. */
+@media (max-width: 700px) {
+    .ambient__field {
+        filter: blur(60px);
+    }
+
+    .ambient__field--c {
+        display: none;
+    }
+}
+
+/* ---------- Typography -------------------------------------------------- */
+h1,
+h2,
+h3,
+h4 {
+    margin: 0;
+    color: var(--text-strong);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-heading);
+    text-wrap: balance;
+}
+
+h1 {
+    font-size: var(--text-display);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-display);
+    line-height: 1.05;
+}
+
+h2 {
+    font-size: var(--text-2xl);
+}
+
+h3 {
+    font-size: var(--text-md);
+    letter-spacing: var(--tracking-heading);
+}
+
+p {
+    margin: 0;
+}
+
+a {
+    color: inherit;
+}
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 0.1em 0.4em;
+    border-radius: var(--radius-xs);
+    background: var(--fill-quiet);
+    color: var(--text-strong);
+}
+
+img,
+svg,
+canvas {
+    max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+ul,
+ol,
+dl,
+dd {
+    margin: 0;
+    padding: 0;
+}
+
+ul {
+    list-style: none;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+/* Small uppercase metadata label — used consistently for eyebrows, readout
+   labels, stat labels and menu titles. */
+.eyebrow {
+    margin: 0;
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+}
+
+.lead {
+    font-size: var(--text-md);
+    line-height: var(--leading-body);
+    color: var(--text-secondary);
+    max-width: var(--measure);
+}
+
+/* ---------- Layout primitives ------------------------------------------- */
+.shell {
+    position: relative;
+    z-index: var(--z-content);
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+}
+
+.container {
+    width: min(var(--shell-max), 100% - (var(--gutter) * 2));
+    margin-inline: auto;
+}
+
+.main {
+    display: grid;
+    gap: var(--gap-section);
+    align-content: start;
+    padding-block: var(--space-5) var(--space-8);
+    flex: 1 0 auto;
+}
+
+.section {
+    scroll-margin-top: calc(var(--appbar-h) + var(--space-5));
+}
+
+/* ---------- Focus -------------------------------------------------------- */
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.skip-link {
+    position: fixed;
+    top: var(--space-3);
+    left: 50%;
+    z-index: var(--z-toast);
+    transform: translate(-50%, -160%);
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--radius-pill);
+    background: var(--mat-floating-bg);
+    backdrop-filter: blur(var(--blur-lg)) saturate(1.6);
+    box-shadow: var(--shadow-3);
+    color: var(--text-strong);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    transition: transform var(--dur-3) var(--ease-spring);
+}
+
+.skip-link:focus-visible {
+    transform: translate(-50%, 0);
+}
+
+::selection {
+    background: var(--accent-soft);
+    color: var(--text-strong);
+}
+
+/* Slim, unobtrusive scrollbars so panels feel native rather than boxed-in. */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: var(--radius-pill);
+    background: var(--hairline-strong) content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary) content-box;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}

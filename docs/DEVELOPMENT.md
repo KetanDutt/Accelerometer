@@ -31,17 +31,31 @@ Then open `http://localhost:8000`.
 
 ```
 Accelerometer/
-├── index.html          # Markup / layout and asset references
+├── index.html          # Markup, icon sprite, ambient background, asset references
 ├── css/
-│   └── style.css       # Styling (dark, responsive, framework-free)
+│   ├── tokens.css      # Design tokens — the only file with raw values
+│   ├── base.css        # Reset, ambient background, typography, focus
+│   ├── components.css  # Glass materials + every component
+│   ├── layout.css      # Appbar, hero, workspace grid, dock, responsive
+│   └── motion.css      # Keyframes, reveals, preference media queries
 ├── js/
-│   └── app.js          # All application logic (single IIFE)
+│   ├── ui.js           # Presentation layer (optional `window.AccUI` facade)
+│   └── app.js          # Application logic (single IIFE)
 ├── docs/               # Documentation
 ├── LICENSE             # MIT
 └── README.md
 ```
 
 ## Architecture
+
+Two scripts, both IIFEs, both dependency-free:
+
+- **`js/ui.js`** — presentation only: theme resolution and persistence, the
+  appearance popover, the gliding navigation indicator, dialogs, scroll reveals
+  and pointer micro-interactions. It exposes `window.AccUI`.
+- **`js/app.js`** — sensor input, chart rendering, recording and export. It reads
+  `window.AccUI` once at start-up and falls back to its own minimal behaviour if
+  the presentation layer is missing, so the app degrades rather than breaks.
 
 `js/app.js` uses an **IIFE** (`(function () { ... })()`) so nothing leaks into the global scope. Important modules inside it:
 
@@ -55,6 +69,9 @@ Accelerometer/
 | Rendering | `scheduleRender` → `renderChart` (canvas) + `updateStats` |
 | Export | `getActiveSamples`, `samplesToCsv`, `downloadCsv`, `downloadJson`, `copyData` |
 | Wiring | `bindEvents`, `init` |
+| Notifications | `setNotice` / `showError` / `flashSuccess` (toast with optional action) |
+| Show/hide with motion | `setVisible` (idempotent — safe to call every frame) |
+| Chart inspection | `setHoverFromClientX`, `moveHover`, `updateTip` |
 
 ### Key design decisions
 
@@ -62,7 +79,8 @@ Accelerometer/
 - **Throttled rendering.** Sensor events can fire ~60+ times per second. Chart and stat updates are coalesced through a single `requestAnimationFrame` (`scheduleRender`), and the live chart only keeps the latest `MAX_ROLLING = 600` samples in the rolling buffer, so drawing cost stays constant even during long recordings.
 - **Editable export.** The export functions prefer a valid JSON array in the textarea (if the user edited it) and only fall back to the raw recording if that is absent or invalid.
 - **Graceful capability detection.** The app distinguishes *permission required* (iOS 13+ / Android), *available* (granted), and *unavailable* (no `DeviceMotion`), so each platform gets a correct message.
-- **Accessibility.** Semantic HTML, ARIA labels (`role="alert"`, `aria-label` on canvas), keyboard-visible focus, and `prefers-reduced-motion` support.
+- **Accessibility.** Semantic HTML, ARIA labels (`role="alert"`, `aria-label` on canvas), keyboard-visible focus, WCAG-checked contrast, and support for `prefers-reduced-motion`, `prefers-reduced-transparency`, `prefers-contrast` and `forced-colors`.
+- **Tokenised styling.** No component sheet contains a raw colour, radius, duration or numeric `z-index`; everything comes from `css/tokens.css`. The static audit below enforces it.
 
 ## Data model
 
@@ -93,6 +111,24 @@ The project intentionally has no build step, so testing is lightweight:
    ```
 3. **Headless smoke test** with Node + `jsdom` (optional, dev-only):
    - Inline `js/app.js` into the HTML, load with `runScripts: "dangerously"`, then drive the buttons. Verify no runtime errors and that recording populates the textarea.
+
+### Design-system audit (dev-only)
+
+Two checks keep the redesign from drifting. They are plain Node scripts; run them
+from anywhere with the repo path adjusted:
+
+```bash
+node /path/to/audit.js      # CSS parse + class coverage + token discipline + WCAG contrast
+node /path/to/dom-test.js   # boots the real page in jsdom and drives every user flow
+```
+
+The functional harness executes the **real** `index.html`, `js/ui.js` and
+`js/app.js`; only the browser back-ends jsdom lacks are stubbed (canvas 2D
+context, element geometry, object URLs, clipboard). It covers all three
+capability paths (sensor available, permission-gated, no `DeviceMotion` at all),
+the record → stop → edit → export flow, invalid-JSON fallback, CSV/JSON output,
+clipboard, the confirm dialog, chart hover/keyboard inspection, theme
+persistence and the reduced-motion boot.
 
 ### CI-style duplicate-ID check
 
