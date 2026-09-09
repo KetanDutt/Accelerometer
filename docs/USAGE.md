@@ -34,11 +34,14 @@ After stopping, the **Recorded data** section appears with your data in an edita
 | **Copy JSON** | Copies the formatted JSON array to the clipboard. |
 | **Download JSON** | Saves `accelerometer-<timestamp>.json`. |
 | **Download CSV** | Saves `accelerometer-<timestamp>.csv` with a header row. |
-| **Clear** | Discards the recorded data and resets the view. |
+| **Clear** | Asks for confirmation, then discards the recorded data and resets the view. |
+| **Format** | Re-indents the JSON in the editor (enabled only while the JSON is valid). |
 
 ### Editing and re-exporting
 
-The exported data is shown as text you can edit. If you change it to a **valid JSON array**, the **Copy** and **Download** buttons use your edited version instead of the original recording. If you break the JSON syntax, the app safely falls back to the last recorded session.
+The exported data is shown as text you can edit. If you change it to a **valid JSON array**, the **Copy** and **Download** buttons use your edited version instead of the original recording. If you break the JSON syntax, the app safely falls back to the last recorded
+session; the editor border and the status chip turn to a calm error state so you
+can see what happened.
 
 ## Using the simulator (desktop / no sensor)
 
@@ -48,7 +51,31 @@ Click **Simulate data** to generate a gentle 3-axis oscillation using your displ
 - record and export a synthetic dataset,
 - and verify the whole app on a laptop or desktop.
 
-Click **Simulate data** again (it becomes **Stop simulate**) to stop.
+Click **Simulate data** again (it becomes **Stop simulation**) to stop.
+
+## Inspecting the chart
+
+- **Hover** anywhere on the chart to pin a glass crosshair and read the exact
+  X, Y and Z values at that sample (with its timestamp).
+- **Keyboard:** focus the chart and use <kbd>←</kbd> / <kbd>→</kbd>
+  (<kbd>Shift</kbd> for ×10), <kbd>Home</kbd> / <kbd>End</kbd>, or
+  <kbd>Esc</kbd> to clear the cursor.
+- **Series toggles:** the X / Y / Z legend buttons hide or show a trace
+  (`aria-pressed` reflects the state), which is useful when one axis dominates.
+
+## Appearance and motion
+
+The button at the right of the header opens the appearance menu:
+
+| Option | Effect |
+| --- | --- |
+| **Auto** | Follows your system light/dark setting (default). |
+| **Light** / **Dark** | Forces that theme. |
+| **Reduce motion** | Turns off travel and ambient animation while keeping every state change visible. |
+
+Your choices are remembered on this device (`localStorage`) — nothing is sent
+anywhere. The app also follows the OS settings for reduced motion, reduced
+transparency and higher contrast.
 
 ## What the readout numbers mean
 

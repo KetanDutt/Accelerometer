@@ -7,6 +7,7 @@ Welcome to the Accelerometer documentation. This page is the index and overview.
 - [User guide (USAGE.md)](USAGE.md) — How to use the app from a normal user's perspective.
 - [Developer & contribution guide (DEVELOPMENT.md)](DEVELOPMENT.md) — Setup, architecture, testing, and how to contribute.
 - [Data format (DATA_FORMAT.md)](DATA_FORMAT.md) — The exact schema of exported JSON and CSV files.
+- [Design system (DESIGN.md)](DESIGN.md) — Materials, tokens, motion and accessibility rules.
 - [Changelog (CHANGELOG.md)](CHANGELOG.md) — Versioned history of changes and migration notes.
 
 ## What this project does
@@ -33,12 +34,14 @@ There is **no backend**. All computation happens in your browser, so no data is 
 ## Architecture at a glance
 
 ```
-index.html  ──►  css/style.css   (visual styling)
+index.html  ──►  css/tokens.css ─► base.css ─► components.css ─► layout.css ─► motion.css
         │
-        └────►  js/app.js        (all logic, in an IIFE, no globals leaked)
+        ├────►  js/ui.js         (presentation: theme, popovers, dialogs, reveals)
+        └────►  js/app.js        (application logic, in an IIFE, no globals leaked)
 ```
 
-`js/app.js` is one self-contained module with clearly separated concerns:
+`js/ui.js` exposes one optional global, `window.AccUI`. `js/app.js` is one
+self-contained module with clearly separated concerns:
 
 - **DOM references** — cached element lookups.
 - **State** — the current sensor/simulation/recording state and the data buffers.

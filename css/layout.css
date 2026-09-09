@@ -1,0 +1,428 @@
+/* ==========================================================================
+   layout.css — page structure, navigation placement and responsive behaviour
+   --------------------------------------------------------------------------
+   Layers used here: appbar (30), dock (30). Dialogs and toasts are positioned
+   in components.css at layers 50 and 60.
+   ========================================================================== */
+
+/* ---------- Appbar (floating, scroll-reactive) --------------------------- */
+.appbar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-nav);
+    padding-top: var(--appbar-inset);
+    pointer-events: none;
+}
+
+.appbar__inner {
+    pointer-events: auto;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-4);
+    width: min(var(--shell-max), 100% - (var(--gutter) * 2));
+    min-height: var(--appbar-h);
+    margin-inline: auto;
+    padding: 0.55rem 0.75rem 0.55rem 0.9rem;
+    --glass-radius: var(--radius-xl);
+    /* Resting state is lighter and less blurred; it firms up as you scroll
+       underneath it, which is what makes the header feel spatial. */
+    --mat-bg: var(--mat-appbar-rest-bg);
+    --mat-blur: var(--blur-md);
+    --mat-sat: 1.5;
+    --mat-border: var(--mat-appbar-rest-border);
+    --mat-shadow: var(--shadow-1);
+    transition:
+        transform var(--dur-3) var(--ease-out),
+        box-shadow var(--dur-3) var(--ease-out),
+        background-color var(--dur-3) var(--ease-out),
+        border-color var(--dur-3) var(--ease-out),
+        backdrop-filter var(--dur-3) var(--ease-out),
+        -webkit-backdrop-filter var(--dur-3) var(--ease-out);
+}
+
+body.is-scrolled .appbar__inner {
+    --mat-bg: var(--mat-floating-bg);
+    --mat-blur: var(--blur-xl);
+    --mat-sat: var(--mat-floating-sat);
+    --mat-border: var(--mat-floating-border);
+    --mat-shadow: var(--shadow-3);
+    transform: translateY(-2px);
+}
+
+/* ---------- Brand -------------------------------------------------------- */
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: opacity var(--dur-2) var(--ease-out);
+}
+
+.brand:hover {
+    opacity: 0.86;
+}
+
+.brand__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    flex: none;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    background: var(--fill-quiet);
+    box-shadow: inset 0 1px 0 var(--sheen-strong), var(--shadow-1);
+}
+
+.brand__mark svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.brand__copy {
+    display: grid;
+    min-width: 0;
+}
+
+.brand__title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-heading);
+    color: var(--text-strong);
+    line-height: 1.2;
+}
+
+.brand__sub {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.appbar__meta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* ---------- Hero --------------------------------------------------------- */
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+    padding: clamp(1.4rem, 3vw, 2.25rem);
+}
+
+.hero__copy {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+}
+
+.hero__aside {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+}
+
+.pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* ---------- Workspace ---------------------------------------------------- */
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+    gap: var(--gap-section);
+    align-items: start;
+}
+
+.workspace__side {
+    display: grid;
+    gap: var(--space-4);
+    position: sticky;
+    top: calc(var(--appbar-h) + var(--appbar-inset) + var(--space-4));
+}
+
+.panel--controls {
+    gap: var(--space-4);
+}
+
+/* ---------- Export ------------------------------------------------------- */
+.export {
+    display: grid;
+    gap: var(--space-5);
+}
+
+/* ---------- Info grid + footer ------------------------------------------- */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-section);
+}
+
+.footer {
+    padding-bottom: var(--space-5);
+}
+
+.footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: 0.85rem 1.1rem;
+    --glass-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.footer__note {
+    color: var(--text-tertiary);
+}
+
+/* ---------- Dock (compact navigation for small screens) ------------------- */
+.dock {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+    z-index: var(--z-nav);
+    display: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: center;
+    width: min(23rem, calc(100vw - 1.5rem));
+    padding: 0.3rem;
+    transform: translateX(-50%);
+    --glass-radius: var(--radius-pill);
+}
+
+.dock__indicator {
+    position: absolute;
+    top: 0.3rem;
+    left: 0;
+    height: calc(100% - 0.6rem);
+    width: var(--ind-w, 0px);
+    transform: translateX(var(--ind-x, 0px));
+    border: 1px solid var(--pill-border);
+    border-radius: var(--radius-pill);
+    background: var(--pill-bg);
+    box-shadow: var(--shadow-1);
+    opacity: var(--ind-opacity, 0);
+    transition:
+        transform var(--dur-3) var(--ease-spring),
+        width var(--dur-3) var(--ease-spring),
+        opacity var(--dur-2) var(--ease-out);
+}
+
+.dock__item {
+    position: relative;
+    z-index: var(--z-within);
+    display: grid;
+    justify-items: center;
+    gap: 0.15rem;
+    min-height: 2.9rem;
+    padding: 0.4rem 0.25rem;
+    border-radius: var(--radius-pill);
+    color: var(--text-tertiary);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--dur-2) var(--ease-out);
+}
+
+.dock__item .icon {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+.dock__label {
+    font-size: 0.625rem;
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.01em;
+}
+
+.dock__item:hover {
+    color: var(--text-secondary);
+}
+
+.dock__item.is-active {
+    color: var(--text-strong);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 1080px) {
+
+    .hero,
+    .workspace,
+    .info-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .workspace__side {
+        position: static;
+    }
+
+    .readouts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    :root {
+        --appbar-h: 4rem;
+    }
+
+    .appbar__inner {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-3);
+    }
+
+    /* The dock replaces the segmented nav; keep only one of them visible so
+       there is never duplicated navigation on screen. */
+    .segmented {
+        display: none;
+    }
+
+    .dock {
+        display: grid;
+    }
+
+    .footer {
+        padding-bottom: calc(var(--dock-h) + var(--space-6) + env(safe-area-inset-bottom));
+    }
+
+    .toast-stack {
+        bottom: calc(var(--dock-h) + var(--space-4) + env(safe-area-inset-bottom));
+    }
+}
+
+@media (max-width: 700px) {
+    .main {
+        gap: var(--space-4);
+        padding-block: var(--space-4) var(--space-6);
+    }
+
+    .panel,
+    .hero {
+        padding: var(--space-4);
+        --glass-radius: var(--radius-xl);
+    }
+
+    .panel__head {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .chart__head {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .legend {
+        align-self: start;
+    }
+
+    #chart {
+        height: 240px;
+    }
+
+    .stats {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .card--info {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .footer__inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .actions .btn {
+        width: 100%;
+    }
+
+    .dialog {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "icon"
+            "body"
+            "actions";
+        width: min(27rem, calc(100vw - 1.5rem));
+        padding: var(--space-5);
+    }
+
+    .dialog__actions .btn {
+        flex: 1 1 auto;
+    }
+}
+
+@media (max-width: 520px) {
+    .appbar__meta .chip--quiet {
+        display: none;
+    }
+
+    .brand__sub {
+        display: none;
+    }
+
+    .readouts {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .editor__topline {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .textarea {
+        min-height: 240px;
+    }
+
+    .toast-stack {
+        left: max(var(--space-3), env(safe-area-inset-left));
+        right: max(var(--space-3), env(safe-area-inset-right));
+        justify-items: stretch;
+    }
+
+    .toast {
+        max-width: none;
+    }
+}
+
+/* Touch devices: no hover-dependent affordances, larger hit areas. */
+@media (hover: none) {
+
+    .segmented__item,
+    .dock__item {
+        min-height: 2.5rem;
+    }
+
+    .btn {
+        min-height: 2.9rem;
+    }
+}

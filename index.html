@@ -1,296 +1,622 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="auto" data-system="light">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef2f8">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c1018">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eaeef5">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0d14">
     <meta name="description"
         content="Record your device's accelerometer (X, Y, Z) motion data and export it as JSON or CSV for simulation, analysis and prototyping.">
     <meta name="author" content="Ketan Dutt">
     <title>Accelerometer — Record &amp; Export Motion Data</title>
     <link rel="icon"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%2338bdf8'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="css/style.css">
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%234a63e7'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/motion.css">
+    <script>
+        /* Resolve the colour theme before first paint so there is no flash of the wrong theme.
+           The full controller (persistence + system tracking) lives in js/ui.js. */
+        (function () {
+            var root = document.documentElement;
+            var stored = null;
+            try { stored = window.localStorage.getItem("accel-theme"); } catch (e) { stored = null; }
+            var theme = (stored === "light" || stored === "dark") ? stored : "auto";
+            var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+            root.setAttribute("data-theme", theme);
+            root.setAttribute("data-system", (mq && mq.matches) ? "dark" : "light");
+        })();
+    </script>
 </head>
 
 <body>
-    <div class="page-shell">
-        <header class="site-header">
-            <div class="container header-inner glass-floating" data-reveal>
+    <!-- Icon sprite: one consistent, geometric 24px stroke set used everywhere -->
+    <svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
+        <defs>
+            <symbol id="i-compass" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+                <path d="M14.8 9.2 13.3 13.3 9.2 14.8l1.5-4.1z" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-activity" viewBox="0 0 24 24">
+                <path d="M3 12.5h3.2l2-5.2 3 10.4 2.6-7 1.7 3.3H21" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-play" viewBox="0 0 24 24">
+                <path d="M9 6.8 17.2 12 9 17.2z" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-stop" viewBox="0 0 24 24">
+                <rect x="7.4" y="7.4" width="9.2" height="9.2" rx="2.4" fill="none" stroke="currentColor"
+                    stroke-width="1.7" />
+            </symbol>
+            <symbol id="i-wave" viewBox="0 0 24 24">
+                <path d="M2.8 12c1.6 0 1.6-4.6 3.2-4.6S7.6 16.6 9.2 16.6 10.8 7.4 12.4 7.4 14 14.6 15.6 14.6s1.6-3.4 3.2-3.4 1.6 1.7 2.4 1.7"
+                    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-copy" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="11" height="11" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7" />
+                <path d="M15 6.4A2.4 2.4 0 0 0 12.6 4H6.4A2.4 2.4 0 0 0 4 6.4v6.2A2.4 2.4 0 0 0 6.4 15" fill="none"
+                    stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-table" viewBox="0 0 24 24">
+                <rect x="3.8" y="4.8" width="16.4" height="14.4" rx="2.6" fill="none" stroke="currentColor"
+                    stroke-width="1.7" />
+                <path d="M3.8 9.6h16.4M9.6 9.6v9.6" fill="none" stroke="currentColor" stroke-width="1.7" />
+            </symbol>
+            <symbol id="i-braces" viewBox="0 0 24 24">
+                <path d="M9.4 4.6C7.6 4.6 7.6 8 7.6 9.4c0 1.5-.7 2.6-2.2 2.6 1.5 0 2.2 1.1 2.2 2.6 0 1.4 0 4.8 1.8 4.8M14.6 4.6c1.8 0 1.8 3.4 1.8 4.8 0 1.5.7 2.6 2.2 2.6-1.5 0-2.2 1.1-2.2 2.6 0 1.4 0 4.8-1.8 4.8"
+                    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-trash" viewBox="0 0 24 24">
+                <path d="M4.8 7.4h14.4M9.4 7.4V5.9a1.6 1.6 0 0 1 1.6-1.6h2a1.6 1.6 0 0 1 1.6 1.6v1.5M6.6 7.4l.8 10.4a2 2 0 0 0 2 1.9h5.2a2 2 0 0 0 2-1.9l.8-10.4M10.4 11v5M13.6 11v5"
+                    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-check" viewBox="0 0 24 24">
+                <path d="M5 12.6 9.6 17 19 6.9" fill="none" stroke="currentColor" stroke-width="1.9"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-lock" viewBox="0 0 24 24">
+                <rect x="4.8" y="10.4" width="14.4" height="9.4" rx="2.8" fill="none" stroke="currentColor"
+                    stroke-width="1.7" />
+                <path d="M8.4 10.4V8.2a3.6 3.6 0 0 1 7.2 0v2.2" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-shield" viewBox="0 0 24 24">
+                <path d="M12 3.6 5.4 6.2v5.1c0 4 2.7 7.4 6.6 9.1 3.9-1.7 6.6-5.1 6.6-9.1V6.2z" fill="none"
+                    stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                <path d="M9.2 12.1 11.3 14l3.6-3.9" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-sun" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7" />
+                <path d="M12 3.4v2M12 18.6v2M3.4 12h2M18.6 12h2M6 6l1.4 1.4M16.6 16.6 18 18M18 6l-1.4 1.4M7.4 16.6 6 18"
+                    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-moon" viewBox="0 0 24 24">
+                <path d="M19 14.4A7.6 7.6 0 0 1 9.6 5a7.6 7.6 0 1 0 9.4 9.4z" fill="none" stroke="currentColor"
+                    stroke-width="1.7" stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-monitor" viewBox="0 0 24 24">
+                <rect x="3.4" y="4.8" width="17.2" height="11.4" rx="2.6" fill="none" stroke="currentColor"
+                    stroke-width="1.7" />
+                <path d="M9 19.6h6M12 16.2v3.4" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-alert" viewBox="0 0 24 24">
+                <path d="M12 4.6 20.4 19H3.6z" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linejoin="round" />
+                <path d="M12 9.8v4.1M12 16.6h.01" fill="none" stroke="currentColor" stroke-width="1.9"
+                    stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-info" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.7" />
+                <path d="M12 11v5.2M12 7.9h.01" fill="none" stroke="currentColor" stroke-width="1.9"
+                    stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-x" viewBox="0 0 24 24">
+                <path d="M6.6 6.6 17.4 17.4M17.4 6.6 6.6 17.4" fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-export" viewBox="0 0 24 24">
+                <path d="M12 15.4V4.6m0 0L8.2 8.4M12 4.6l3.8 3.8M4.6 15v3.1a2.4 2.4 0 0 0 2.4 2.4h10a2.4 2.4 0 0 0 2.4-2.4V15"
+                    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </symbol>
+            <symbol id="i-gauge" viewBox="0 0 24 24">
+                <path d="M4.4 17.2a8.4 8.4 0 1 1 15.2 0" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" />
+                <path d="M12 13.6 15.4 9.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <circle cx="12" cy="14.6" r="1.5" fill="none" stroke="currentColor" stroke-width="1.7" />
+            </symbol>
+            <symbol id="i-device" viewBox="0 0 24 24">
+                <rect x="6.6" y="3.4" width="10.8" height="17.2" rx="2.8" fill="none" stroke="currentColor"
+                    stroke-width="1.7" />
+                <path d="M10.8 17.8h2.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </symbol>
+            <symbol id="i-layers" viewBox="0 0 24 24">
+                <path d="m12 3.8 8.2 4.3-8.2 4.3-8.2-4.3z" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linejoin="round" />
+                <path d="m4.4 12.6 7.6 4 7.6-4M4.4 16.6l7.6 4 7.6-4" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- Layer 0 — ambient background the glass materials sit on top of -->
+    <div class="ambient" aria-hidden="true">
+        <span class="ambient__field ambient__field--a"></span>
+        <span class="ambient__field ambient__field--b"></span>
+        <span class="ambient__field ambient__field--c"></span>
+        <span class="ambient__grain"></span>
+    </div>
+
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <div class="shell">
+        <header class="appbar" data-appbar>
+            <div class="appbar__inner glass glass--floating">
                 <a class="brand" href="./" aria-label="Accelerometer home">
-                    <span class="brand-mark" aria-hidden="true">
+                    <span class="brand__mark" aria-hidden="true">
                         <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <linearGradient id="brand-gradient" x1="8" y1="6" x2="40" y2="42"
                                     gradientUnits="userSpaceOnUse">
-                                    <stop stop-color="#7DB8FF" />
-                                    <stop offset="1" stop-color="#5B72FF" />
+                                    <stop stop-color="#8FA6FF" />
+                                    <stop offset="1" stop-color="#4A63E7" />
                                 </linearGradient>
                             </defs>
                             <circle cx="24" cy="24" r="19" stroke="url(#brand-gradient)" stroke-width="3.2" />
-                            <circle cx="24" cy="24" r="10" stroke="url(#brand-gradient)" stroke-opacity="0.62"
+                            <circle cx="24" cy="24" r="10" stroke="url(#brand-gradient)" stroke-opacity="0.6"
                                 stroke-width="3.2" />
                             <circle cx="24" cy="24" r="3.25" fill="url(#brand-gradient)" />
                         </svg>
                     </span>
-                    <span class="brand-copy">
-                        <span class="brand-title">Accelerometer</span>
-                        <span class="brand-subtitle">On-device motion capture studio</span>
+                    <span class="brand__copy">
+                        <span class="brand__title">Accelerometer</span>
+                        <span class="brand__sub">On-device motion capture</span>
                     </span>
                 </a>
 
-                <nav class="site-nav" aria-label="Primary">
-                    <a href="#overview" class="nav-link is-active">Overview</a>
-                    <a href="#workspace" class="nav-link">Workspace</a>
-                    <a href="#export" class="nav-link">Export</a>
-                    <a href="#privacy" class="nav-link">Privacy</a>
+                <nav class="segmented" aria-label="Sections" data-nav>
+                    <span class="segmented__indicator" aria-hidden="true" data-indicator></span>
+                    <a href="#overview" class="segmented__item nav-link is-active">Overview</a>
+                    <a href="#workspace" class="segmented__item nav-link">Workspace</a>
+                    <a href="#export" class="segmented__item nav-link">Export</a>
+                    <a href="#privacy" class="segmented__item nav-link">Privacy</a>
                 </nav>
 
-                <div class="header-status" aria-live="polite">
-                    <span class="status-chip status-chip-subtle">Private</span>
-                    <span id="sensorStatus" class="status-chip status-chip-live">Checking sensors</span>
+                <div class="appbar__meta">
+                    <span class="chip chip--quiet">On-device</span>
+                    <span id="sensorStatus" class="chip chip--live" role="status" aria-live="polite">Checking
+                        sensors</span>
+
+                    <div class="menu" data-menu>
+                        <button type="button" class="icon-btn" data-menu-trigger aria-haspopup="menu"
+                            aria-expanded="false" aria-controls="appearance-menu" aria-label="Appearance">
+                            <svg class="icon icon--theme-auto" aria-hidden="true"><use href="#i-monitor"></use></svg>
+                            <svg class="icon icon--theme-light" aria-hidden="true"><use href="#i-sun"></use></svg>
+                            <svg class="icon icon--theme-dark" aria-hidden="true"><use href="#i-moon"></use></svg>
+                        </button>
+                        <div id="appearance-menu" class="menu__panel glass glass--floating" role="menu"
+                            aria-label="Appearance" data-menu-panel hidden>
+                            <p class="menu__title" id="appearance-title">Appearance</p>
+                            <button type="button" class="menu__item" role="menuitemradio" data-theme-option="auto"
+                                aria-checked="true">
+                                <svg class="icon" aria-hidden="true"><use href="#i-monitor"></use></svg>
+                                <span class="menu__label">Auto</span>
+                                <span class="menu__hint">System</span>
+                                <svg class="icon menu__check" aria-hidden="true"><use href="#i-check"></use></svg>
+                            </button>
+                            <button type="button" class="menu__item" role="menuitemradio" data-theme-option="light"
+                                aria-checked="false">
+                                <svg class="icon" aria-hidden="true"><use href="#i-sun"></use></svg>
+                                <span class="menu__label">Light</span>
+                                <svg class="icon menu__check" aria-hidden="true"><use href="#i-check"></use></svg>
+                            </button>
+                            <button type="button" class="menu__item" role="menuitemradio" data-theme-option="dark"
+                                aria-checked="false">
+                                <svg class="icon" aria-hidden="true"><use href="#i-moon"></use></svg>
+                                <span class="menu__label">Dark</span>
+                                <svg class="icon menu__check" aria-hidden="true"><use href="#i-check"></use></svg>
+                            </button>
+                            <span class="menu__sep" role="presentation"></span>
+                            <button type="button" class="menu__item" role="menuitemcheckbox" data-motion-toggle
+                                aria-checked="false">
+                                <svg class="icon" aria-hidden="true"><use href="#i-wave"></use></svg>
+                                <span class="menu__label">Reduce motion</span>
+                                <span class="menu__hint" data-motion-hint>Off</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <main class="container app-shell">
+        <main id="main" class="main container">
             <noscript>
-                <section class="surface surface-warning alert-panel">
+                <section class="glass glass--warning panel panel--alert">
+                    <span class="panel__icon" aria-hidden="true"><svg class="icon"><use href="#i-alert"></use></svg></span>
                     <h2>JavaScript is disabled</h2>
                     <p>This app needs JavaScript to read the device accelerometer. Please enable JavaScript and reload.</p>
                 </section>
             </noscript>
 
-            <section id="overview" class="surface surface-primary overview-panel" data-nav-section data-reveal>
-                <div class="overview-copy">
+            <!-- Overview ---------------------------------------------------- -->
+            <section id="overview" class="section hero glass glass--primary" data-nav-section data-reveal
+               >
+                <div class="hero__copy">
                     <p class="eyebrow">Motion capture, refined</p>
                     <h1>Record live accelerometer data in a calm, precise workspace.</h1>
-                    <p class="lead">Capture real X, Y, and Z motion, monitor the signal in real time, and export
-                        structured data as JSON or CSV without sending anything off-device.</p>
-                    <div class="feature-row" aria-label="Key features">
-                        <span class="feature-pill">Live charting</span>
-                        <span class="feature-pill">Editable export</span>
-                        <span class="feature-pill">Sensor-aware permissions</span>
-                        <span class="feature-pill">Desktop simulation</span>
-                    </div>
+                    <p class="lead">Capture real X, Y and Z motion, monitor the signal in real time, and export
+                        structured data as JSON or CSV — without sending anything off-device.</p>
+                    <ul class="pill-row" aria-label="Key features">
+                        <li class="pill">Live charting</li>
+                        <li class="pill">Editable export</li>
+                        <li class="pill">Sensor-aware permissions</li>
+                        <li class="pill">Desktop simulation</li>
+                    </ul>
                 </div>
 
-                <div class="overview-aside">
-                    <section class="mini-panel glass-secondary">
-                        <span class="mini-label">Session status</span>
+                <div class="hero__aside">
+                    <section class="card card--inset card--status">
+                        <span class="eyebrow">Session status</span>
                         <strong id="sessionStatus">Preparing workspace</strong>
                         <p id="liveNote">Allow motion access or start the simulator to preview the full workflow on any
                             device.</p>
                     </section>
 
-                    <div class="mini-grid">
-                        <article class="mini-stat glass-secondary">
-                            <span class="mini-label">Privacy</span>
-                            <p>Everything runs locally in the browser. Nothing is uploaded or shared.</p>
+                    <div class="card-grid">
+                        <article class="card card--inset">
+                            <span class="card__icon" aria-hidden="true"><svg class="icon"><use href="#i-shield"></use></svg></span>
+                            <div>
+                                <h3>Private by design</h3>
+                                <p>Everything runs locally in the browser. Nothing is uploaded or shared.</p>
+                            </div>
                         </article>
-                        <article class="mini-stat glass-secondary">
-                            <span class="mini-label">Exports</span>
-                            <p>Copy or download timestamped samples as JSON or CSV whenever you're ready.</p>
+                        <article class="card card--inset">
+                            <span class="card__icon" aria-hidden="true"><svg class="icon"><use href="#i-layers"></use></svg></span>
+                            <div>
+                                <h3>Ready to export</h3>
+                                <p>Copy or download timestamped samples as JSON or CSV whenever you're ready.</p>
+                            </div>
                         </article>
                     </div>
                 </div>
             </section>
 
-            <section id="workspace" class="workspace-grid" data-nav-section>
-                <section class="surface surface-primary live-panel" data-reveal>
-                    <div class="panel-heading">
-                        <div>
+            <!-- Workspace --------------------------------------------------- -->
+            <section id="workspace" class="section workspace" data-nav-section>
+                <section class="glass glass--primary panel panel--live" data-reveal>
+                    <header class="panel__head">
+                        <div class="panel__titles">
                             <p class="eyebrow">Live workspace</p>
                             <h2>Realtime motion readout</h2>
-                            <p class="panel-copy">Monitor each axis, magnitude, and signal history while the sensor or
+                            <p class="panel__copy">Monitor each axis, magnitude and signal history while the sensor or
                                 simulator streams data.</p>
                         </div>
-                        <span id="recording-badge" class="badge badge-recording" hidden>
-                            <span class="badge-dot" aria-hidden="true"></span>
+                        <span id="recording-badge" class="badge badge--recording" hidden>
+                            <span class="badge__dot" aria-hidden="true"></span>
                             Recording
                         </span>
+                    </header>
+
+                    <div class="readouts">
+                        <article id="readoutX" class="readout readout--x">
+                            <span class="readout__label">X Axis</span>
+                            <span class="readout__value" id="valX">0.00</span>
+                            <span class="readout__unit">m/s²</span>
+                            <span class="meter" aria-hidden="true"><span class="meter__fill"></span></span>
+                        </article>
+                        <article id="readoutY" class="readout readout--y">
+                            <span class="readout__label">Y Axis</span>
+                            <span class="readout__value" id="valY">0.00</span>
+                            <span class="readout__unit">m/s²</span>
+                            <span class="meter" aria-hidden="true"><span class="meter__fill"></span></span>
+                        </article>
+                        <article id="readoutZ" class="readout readout--z">
+                            <span class="readout__label">Z Axis</span>
+                            <span class="readout__value" id="valZ">0.00</span>
+                            <span class="readout__unit">m/s²</span>
+                            <span class="meter" aria-hidden="true"><span class="meter__fill"></span></span>
+                        </article>
+                        <article id="readoutMag" class="readout readout--mag">
+                            <span class="readout__label">Magnitude</span>
+                            <span class="readout__value" id="valMag">0.00</span>
+                            <span class="readout__unit">m/s²</span>
+                            <span class="meter" aria-hidden="true"><span class="meter__fill"></span></span>
+                        </article>
                     </div>
 
-                    <div class="readout-grid">
-                        <article id="readoutX" class="readout readout-x">
-                            <span class="readout-label">X Axis</span>
-                            <span id="valX" class="readout-value">0.00</span>
-                            <span class="readout-unit">m/s²</span>
-                        </article>
-                        <article id="readoutY" class="readout readout-y">
-                            <span class="readout-label">Y Axis</span>
-                            <span id="valY" class="readout-value">0.00</span>
-                            <span class="readout-unit">m/s²</span>
-                        </article>
-                        <article id="readoutZ" class="readout readout-z">
-                            <span class="readout-label">Z Axis</span>
-                            <span id="valZ" class="readout-value">0.00</span>
-                            <span class="readout-unit">m/s²</span>
-                        </article>
-                        <article id="readoutMag" class="readout readout-mag">
-                            <span class="readout-label">Magnitude</span>
-                            <span id="valMag" class="readout-value">0.00</span>
-                            <span class="readout-unit">m/s²</span>
-                        </article>
-                    </div>
-
-                    <div class="chart-wrap glass-secondary">
-                        <div class="chart-header">
+                    <figure class="chart card--inset" data-chart>
+                        <figcaption class="chart__head">
                             <div>
-                                <span class="mini-label">Motion field</span>
+                                <span class="eyebrow">Motion field</span>
                                 <h3>Realtime response</h3>
                             </div>
-                            <p class="chart-hint">X <span class="legend-swatch legend-x"></span> Y <span
-                                    class="legend-swatch legend-y"></span> Z <span
-                                    class="legend-swatch legend-z"></span></p>
+                            <div class="legend" role="group" aria-label="Toggle chart series">
+                                <button type="button" class="legend__item" data-series="x" aria-pressed="true">
+                                    <span class="legend__swatch legend__swatch--x" aria-hidden="true"></span>X
+                                </button>
+                                <button type="button" class="legend__item" data-series="y" aria-pressed="true">
+                                    <span class="legend__swatch legend__swatch--y" aria-hidden="true"></span>Y
+                                </button>
+                                <button type="button" class="legend__item" data-series="z" aria-pressed="true">
+                                    <span class="legend__swatch legend__swatch--z" aria-hidden="true"></span>Z
+                                </button>
+                            </div>
+                        </figcaption>
+
+                        <div class="chart__viewport">
+                            <canvas id="chart" role="img" tabindex="0"
+                                aria-label="Live time-series chart of X, Y and Z acceleration. Use the left and right arrow keys to inspect individual samples."></canvas>
+                            <div class="chart__idle" data-chart-idle>
+                                <span class="chart__pulse" aria-hidden="true"></span>
+                                <p>Waiting for a motion signal</p>
+                                <span class="chart__idle-hint">Start the simulator or grant sensor access</span>
+                            </div>
+                            <div class="chart__tip glass glass--floating" data-chart-tip hidden>
+                                <span class="chart__tip-time" data-tip-time></span>
+                                <span class="chart__tip-rows">
+                                    <span class="chart__tip-row" data-tip-row="x">
+                                        <span class="legend__swatch legend__swatch--x" aria-hidden="true"></span>X
+                                        <b data-tip-value="x"></b>
+                                    </span>
+                                    <span class="chart__tip-row" data-tip-row="y">
+                                        <span class="legend__swatch legend__swatch--y" aria-hidden="true"></span>Y
+                                        <b data-tip-value="y"></b>
+                                    </span>
+                                    <span class="chart__tip-row" data-tip-row="z">
+                                        <span class="legend__swatch legend__swatch--z" aria-hidden="true"></span>Z
+                                        <b data-tip-value="z"></b>
+                                    </span>
+                                </span>
+                            </div>
                         </div>
-                        <canvas id="chart" role="img" aria-label="Live time-series chart of X, Y and Z acceleration"></canvas>
-                    </div>
+                    </figure>
 
                     <div id="stats" class="stats" hidden>
-                        <div class="stat glass-secondary">
-                            <span class="stat-label">Samples</span>
-                            <span id="statCount">0</span>
+                        <div class="stat card--inset">
+                            <span class="stat__label">Samples</span>
+                            <span class="stat__value" id="statCount">0</span>
                         </div>
-                        <div class="stat glass-secondary">
-                            <span class="stat-label">Duration</span>
-                            <span id="statDuration">0.0s</span>
+                        <div class="stat card--inset">
+                            <span class="stat__label">Duration</span>
+                            <span class="stat__value" id="statDuration">0.0s</span>
                         </div>
-                        <div class="stat glass-secondary">
-                            <span class="stat-label">Sample rate</span>
-                            <span id="statRate">0 Hz</span>
+                        <div class="stat card--inset">
+                            <span class="stat__label">Sample rate</span>
+                            <span class="stat__value" id="statRate">0 Hz</span>
                         </div>
                     </div>
                 </section>
 
-                <aside class="sidebar-stack">
-                    <section id="permission-section" class="surface surface-tinted alert-panel" hidden data-reveal>
-                        <h2>Allow motion access</h2>
-                        <p id="permission-note">To read your device's motion sensors, please grant permission.</p>
-                        <button id="permission-btn" type="button" class="btn btn-primary">Enable motion sensors</button>
+                <aside class="workspace__side">
+                    <section id="permission-section" class="glass glass--tinted panel panel--alert" hidden data-reveal>
+                        <span class="panel__icon" aria-hidden="true"><svg class="icon"><use href="#i-device"></use></svg></span>
+                        <div class="panel__titles">
+                            <h2>Allow motion access</h2>
+                            <p id="permission-note">To read your device's motion sensors, please grant permission.</p>
+                        </div>
+                        <button id="permission-btn" type="button" class="btn btn--primary">Enable motion sensors</button>
                     </section>
 
-                    <section id="unsupported-section" class="surface surface-warning alert-panel" hidden data-reveal>
-                        <h2>Motion sensors not available</h2>
-                        <p id="unsupported-note">Your browser or device does not expose the accelerometer. You can still use the
-                            simulated demo below.</p>
+                    <section id="unsupported-section" class="glass glass--warning panel panel--alert" hidden data-reveal>
+                        <span class="panel__icon" aria-hidden="true"><svg class="icon"><use href="#i-alert"></use></svg></span>
+                        <div class="panel__titles">
+                            <h2>Motion sensors not available</h2>
+                            <p id="unsupported-note">Your browser or device does not expose the accelerometer. You can
+                                still use the simulated demo.</p>
+                        </div>
                     </section>
 
-                    <section class="surface surface-floating control-panel" data-reveal>
-                        <div class="panel-heading panel-heading-compact">
-                            <div>
+                    <section class="glass glass--primary panel panel--controls" data-reveal>
+                        <header class="panel__head panel__head--compact">
+                            <div class="panel__titles">
                                 <p class="eyebrow">Capture controls</p>
                                 <h2>Start a session</h2>
                             </div>
-                            <span id="modeStatus" class="status-chip status-chip-subtle">Idle</span>
-                        </div>
-                        <p class="panel-copy">Use the real sensor when available, or preview the complete recording flow
+                            <span id="modeStatus" class="chip chip--quiet">Idle</span>
+                        </header>
+                        <p class="panel__copy">Use the real sensor when available, or preview the complete recording flow
                             with synthetic data on desktop.</p>
 
                         <div class="controls">
-                            <button id="startBtn" type="button" class="btn btn-success" hidden>Start recording</button>
-                            <button id="stopBtn" type="button" class="btn btn-danger" hidden>Stop recording</button>
-                            <button id="simBtn" type="button" class="btn btn-secondary">Simulate data</button>
+                            <button id="startBtn" type="button" class="btn btn--success" hidden>
+                                <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
+                                <span class="btn__label">Start recording</span>
+                            </button>
+                            <button id="stopBtn" type="button" class="btn btn--danger" hidden>
+                                <svg class="icon" aria-hidden="true"><use href="#i-stop"></use></svg>
+                                <span class="btn__label">Stop recording</span>
+                            </button>
+                            <button id="simBtn" type="button" class="btn btn--secondary" aria-pressed="false">
+                                <svg class="icon" aria-hidden="true"><use href="#i-wave"></use></svg>
+                                <span class="btn__label">Simulate data</span>
+                            </button>
                         </div>
 
-                        <div class="detail-list" aria-label="Session details">
-                            <div class="detail-row">
-                                <span>Source</span>
-                                <strong id="sourceStatus">Checking availability</strong>
+                        <dl class="details">
+                            <div class="details__row">
+                                <dt>Source</dt>
+                                <dd id="sourceStatus">Checking availability</dd>
                             </div>
-                            <div class="detail-row">
-                                <span>State</span>
-                                <strong id="stateStatus">Preparing</strong>
+                            <div class="details__row">
+                                <dt>State</dt>
+                                <dd id="stateStatus">Preparing</dd>
                             </div>
-                            <div class="detail-row">
-                                <span>Output</span>
-                                <strong>JSON / CSV</strong>
+                            <div class="details__row">
+                                <dt>Output</dt>
+                                <dd>JSON / CSV</dd>
                             </div>
-                        </div>
+                        </dl>
                     </section>
                 </aside>
             </section>
 
-            <section id="export" class="surface surface-primary export-panel" data-nav-section data-reveal>
-                <div id="data-section" class="export-shell is-empty">
-                    <div class="panel-heading">
-                        <div>
+            <!-- Export ------------------------------------------------------ -->
+            <section id="export" class="section glass glass--primary panel panel--export" data-nav-section data-reveal
+               >
+                <div id="data-section" class="export is-empty">
+                    <header class="panel__head">
+                        <div class="panel__titles">
                             <p class="eyebrow">Export studio</p>
                             <h2>Review and package your data</h2>
-                            <p class="panel-copy">Captured samples appear here for editing, copying, and download once a
+                            <p class="panel__copy">Captured samples appear here for editing, copying and download once a
                                 session is complete.</p>
                         </div>
-                    </div>
+                        <span id="editorState" class="chip chip--quiet">Empty</span>
+                    </header>
 
                     <div class="actions">
-                        <button id="copyBtn" type="button" class="btn btn-primary" disabled>Copy JSON</button>
-                        <button id="downloadJsonBtn" type="button" class="btn btn-primary" disabled>Download JSON</button>
-                        <button id="downloadCsvBtn" type="button" class="btn btn-secondary" disabled>Download CSV</button>
-                        <button id="clearBtn" type="button" class="btn btn-ghost" disabled>Clear</button>
+                        <button id="copyBtn" type="button" class="btn btn--primary" disabled>
+                            <svg class="icon btn__icon" aria-hidden="true"><use href="#i-copy"></use></svg>
+                            <svg class="icon btn__icon-done" aria-hidden="true"><use href="#i-check"></use></svg>
+                            <span class="btn__label">Copy JSON</span>
+                        </button>
+                        <button id="downloadJsonBtn" type="button" class="btn btn--secondary" disabled>
+                            <svg class="icon btn__icon" aria-hidden="true"><use href="#i-braces"></use></svg>
+                            <svg class="icon btn__icon-done" aria-hidden="true"><use href="#i-check"></use></svg>
+                            <span class="btn__label">Download JSON</span>
+                        </button>
+                        <button id="downloadCsvBtn" type="button" class="btn btn--secondary" disabled>
+                            <svg class="icon btn__icon" aria-hidden="true"><use href="#i-table"></use></svg>
+                            <svg class="icon btn__icon-done" aria-hidden="true"><use href="#i-check"></use></svg>
+                            <span class="btn__label">Download CSV</span>
+                        </button>
+                        <button id="clearBtn" type="button" class="btn btn--ghost" disabled>
+                            <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                            <span class="btn__label">Clear</span>
+                        </button>
                     </div>
 
-                    <div class="editor-shell glass-secondary">
-                        <div class="field-topline">
-                            <label class="field-label" for="textarea">Data editor</label>
-                            <span id="dataSummary" class="field-meta">No samples recorded yet</span>
-                        </div>
-                        <textarea id="textarea" class="textarea" rows="12" spellcheck="false"
-                            placeholder='[{"t":0,"x":0.12,"y":0.03,"z":9.81,"mag":9.81}, ...]'></textarea>
-
-                        <div id="emptyState" class="empty-state" aria-live="polite">
-                            <div class="empty-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M5 12.75L9 16.5L19 6.5" stroke="currentColor" stroke-width="1.75"
-                                        stroke-linecap="round" stroke-linejoin="round" opacity="0.65" />
-                                    <path d="M4 4H20V20H4V4Z" stroke="currentColor" stroke-width="1.4" opacity="0.32"
-                                        stroke-linejoin="round" />
-                                </svg>
+                    <div class="editor card--inset">
+                        <div class="editor__topline">
+                            <label class="editor__label" for="textarea">Data editor</label>
+                            <div class="editor__meta">
+                                <span id="dataSummary" class="editor__summary">No samples recorded yet</span>
+                                <button id="formatBtn" type="button" class="btn btn--quiet btn--sm" disabled>
+                                    <svg class="icon" aria-hidden="true"><use href="#i-braces"></use></svg>
+                                    <span class="btn__label">Format</span>
+                                </button>
                             </div>
-                            <div>
-                                <h3 id="emptyStateTitle">Nothing captured yet</h3>
-                                <p id="emptyStateText">Start a recording or run the simulator to populate the editor with
-                                    timestamped accelerometer samples.</p>
+                        </div>
+
+                        <div class="editor__field">
+                            <textarea id="textarea" class="textarea" rows="12" spellcheck="false"
+                                aria-describedby="dataSummary"
+                                placeholder='[{"t":0,"x":0.12,"y":0.03,"z":9.81,"mag":9.81}, ...]'></textarea>
+
+                            <div id="emptyState" class="empty" aria-live="polite">
+                                <span class="empty__icon" aria-hidden="true">
+                                    <svg class="icon" viewBox="0 0 24 24"><use href="#i-activity"></use></svg>
+                                </span>
+                                <div class="empty__copy">
+                                    <h3 id="emptyStateTitle">Nothing captured yet</h3>
+                                    <p id="emptyStateText">Start a recording or run the simulator to populate the editor
+                                        with timestamped accelerometer samples.</p>
+                                </div>
+                                <button type="button" class="btn btn--secondary btn--sm" data-empty-action>
+                                    <svg class="icon" aria-hidden="true"><use href="#i-wave"></use></svg>
+                                    <span class="btn__label">Run the simulator</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="privacy" class="info-grid" data-nav-section>
-                <article class="surface surface-secondary info-card" data-reveal>
-                    <span class="info-icon" aria-hidden="true">◎</span>
+            <!-- Privacy ----------------------------------------------------- -->
+            <section id="privacy" class="section info-grid" data-nav-section>
+                <article class="glass glass--secondary card card--info" data-reveal>
+                    <span class="card__icon card__icon--lg" aria-hidden="true"><svg class="icon"><use href="#i-lock"></use></svg></span>
                     <div>
                         <p class="eyebrow">Privacy first</p>
                         <h2>Your data stays with you</h2>
                         <p>Sensor readings never leave your device. The entire workflow runs locally in your browser with
-                            no servers or tracking.</p>
+                            no servers, no accounts and no tracking.</p>
                     </div>
                 </article>
 
-                <article class="surface surface-secondary info-card" data-reveal>
-                    <span class="info-icon" aria-hidden="true">⌁</span>
+                <article class="glass glass--secondary card card--info" data-reveal>
+                    <span class="card__icon card__icon--lg" aria-hidden="true"><svg class="icon"><use href="#i-gauge"></use></svg></span>
                     <div>
                         <p class="eyebrow">Compatibility</p>
-                        <h2>Designed for real devices and desktop previews</h2>
-                        <p>The app uses the <code>DeviceMotion</code> API over HTTPS and includes a built-in simulation mode
-                            so you can validate flows on laptops and unsupported browsers.</p>
+                        <h2>Built for real devices and desktop previews</h2>
+                        <p>The app uses the <code>DeviceMotion</code> API over HTTPS and includes a built-in simulation
+                            mode so you can validate every flow on laptops and unsupported browsers.</p>
                     </div>
                 </article>
             </section>
-
-            <p id="err" class="toast" role="status" aria-live="polite" hidden></p>
         </main>
 
-        <footer class="site-footer">
-            <div class="container footer-inner glass-secondary">
+        <footer class="footer">
+            <div class="container footer__inner glass glass--secondary">
                 <p>Uses the <code>DeviceMotion</code> API — requires HTTPS and a motion-capable device.</p>
-                <p>Data never leaves your device.</p>
+                <p class="footer__note">Data never leaves your device.</p>
             </div>
         </footer>
     </div>
 
+    <!-- Layer 3 — compact thumb-friendly navigation on small screens -->
+    <nav class="dock glass glass--floating" aria-label="Sections" data-dock>
+        <span class="dock__indicator" aria-hidden="true" data-indicator></span>
+        <a href="#overview" class="dock__item nav-link is-active">
+            <svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg>
+            <span class="dock__label">Overview</span>
+        </a>
+        <a href="#workspace" class="dock__item nav-link">
+            <svg class="icon" aria-hidden="true"><use href="#i-activity"></use></svg>
+            <span class="dock__label">Workspace</span>
+        </a>
+        <a href="#export" class="dock__item nav-link">
+            <svg class="icon" aria-hidden="true"><use href="#i-export"></use></svg>
+            <span class="dock__label">Export</span>
+        </a>
+        <a href="#privacy" class="dock__item nav-link">
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <span class="dock__label">Privacy</span>
+        </a>
+    </nav>
+
+    <!-- Layer 5 — dialog -->
+    <div class="scrim" data-dialog-scrim hidden></div>
+    <div class="dialog glass glass--floating" id="confirm-dialog" role="dialog" aria-modal="true"
+        aria-labelledby="confirm-title" aria-describedby="confirm-desc" data-dialog hidden>
+        <span class="dialog__icon" aria-hidden="true"><svg class="icon"><use href="#i-trash"></use></svg></span>
+        <div class="dialog__body">
+            <h2 id="confirm-title">Clear this session?</h2>
+            <p id="confirm-desc">The recorded samples and anything typed into the editor will be discarded. Exported
+                files you already downloaded are unaffected.</p>
+        </div>
+        <div class="dialog__actions">
+            <button type="button" class="btn btn--ghost" data-dialog-cancel>Cancel</button>
+            <button type="button" class="btn btn--danger" data-dialog-confirm>
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                <span class="btn__label">Clear data</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Layer 6 — notifications -->
+    <div class="toast-stack" data-toast-stack>
+        <div id="err" class="toast glass glass--floating" role="status" aria-live="polite" hidden>
+            <span class="toast__icon" aria-hidden="true" data-toast-icon>
+                <svg class="icon"><use href="#i-info"></use></svg>
+            </span>
+            <span class="toast__msg" data-toast-msg></span>
+            <button type="button" class="btn btn--quiet btn--sm toast__action" data-toast-action hidden></button>
+            <button type="button" class="toast__close" data-toast-close aria-label="Dismiss notification">
+                <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+            </button>
+        </div>
+    </div>
+
+    <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
 </body>
 
