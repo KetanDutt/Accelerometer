@@ -57,8 +57,6 @@
     --space-9: 3.25rem;
     --space-10: 4.5rem;
 
-    --gap-inline: var(--space-3);
-    --gap-stack: var(--space-4);
     --gap-section: clamp(1.1rem, 2.4vw, 1.75rem);
     --gutter: clamp(1rem, 3.2vw, 2rem);
     --measure: 68ch;

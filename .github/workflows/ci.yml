@@ -20,6 +20,9 @@ jobs:
             node --check "$f"
           done
 
+      - name: Audit the design system
+        run: node scripts/audit-design-system.js
+
       - name: Check for duplicate element IDs
         run: |
           python3 - <<'PY'

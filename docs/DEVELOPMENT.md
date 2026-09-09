@@ -112,23 +112,45 @@ The project intentionally has no build step, so testing is lightweight:
 3. **Headless smoke test** with Node + `jsdom` (optional, dev-only):
    - Inline `js/app.js` into the HTML, load with `runScripts: "dangerously"`, then drive the buttons. Verify no runtime errors and that recording populates the textarea.
 
-### Design-system audit (dev-only)
-
-Two checks keep the redesign from drifting. They are plain Node scripts; run them
-from anywhere with the repo path adjusted:
+### Design-system audit (in CI)
 
 ```bash
-node /path/to/audit.js      # CSS parse + class coverage + token discipline + WCAG contrast
-node /path/to/dom-test.js   # boots the real page in jsdom and drives every user flow
+node scripts/audit-design-system.js
 ```
 
-The functional harness executes the **real** `index.html`, `js/ui.js` and
-`js/app.js`; only the browser back-ends jsdom lacks are stubbed (canvas 2D
-context, element geometry, object URLs, clipboard). It covers all three
-capability paths (sensor available, permission-gated, no `DeviceMotion` at all),
-the record → stop → edit → export flow, invalid-JSON fallback, CSV/JSON output,
-clipboard, the confirm dialog, chart hover/keyboard inspection, theme
-persistence and the reduced-motion boot.
+Zero dependencies, so it runs in CI alongside the checks below. It verifies:
+
+1. **CSS structure** — balanced blocks in every sheet.
+2. **Token resolution** — every `var(--x)` resolves to a real definition
+   (global, component-local or written at runtime). This catches typos that a
+   CSS parser accepts silently.
+3. **Token hygiene** — flags one-off tokens that nothing uses. Scale steps
+   (`--space-*`, `--radius-*`, `--dur-*` …) are exempt: a scale is a vocabulary.
+4. **Class coverage** — classes in markup/JS have rules and rules have markup;
+   every `chip--*` variant `setChipVariant()` can emit is styled.
+5. **Icon integrity** — every `<use href="#i-...">` resolves to a sprite symbol.
+6. **Token discipline** — component sheets contain no raw hex colour, literal
+   radius, literal duration or numeric `z-index`.
+7. **WCAG contrast** — each text token composited over its *real* surface stack
+   (tint → glass → page), in both themes. Translucency changes the answer, so
+   measuring against flat white would be wrong.
+
+### Functional smoke test (dev-only, needs jsdom)
+
+The UI flows are covered by a jsdom harness that executes the **real**
+`index.html`, `js/ui.js` and `js/app.js`; only the browser back-ends jsdom lacks
+are stubbed (canvas 2D context, element geometry, object URLs, clipboard).
+
+```bash
+npm install --no-save jsdom        # dev-only; not a project dependency
+node scripts/verify-flows.js
+```
+
+It covers all three capability paths (sensor available, permission-gated, no
+`DeviceMotion` at all), the record → stop → edit → export flow, invalid-JSON
+fallback, CSV/JSON output bytes, clipboard, the confirm dialog, chart
+hover/keyboard inspection, theme persistence and the reduced-motion boot. It is
+**not** wired into CI, so the pipeline stays dependency-free.
 
 ### CI-style duplicate-ID check
 
