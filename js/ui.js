@@ -327,13 +327,30 @@
         api.refreshIndicators = refresh;
     }
 
-    /* ---------- Scroll-reactive chrome ------------------------------------ */
+    /* ---------- Scroll-reactive chrome ------------------------------------
+       Two independent effects, both cheap:
+         1. a class flips the appbar material to the firmer blur once the page
+            has actually scrolled (blur/saturation are not cheap to ramp);
+         2. a 0..1 progress value drives the veil that densifies the glass and
+            deepens its shadow, so depth arrives continuously.
+       The progress value is rounded to two decimals and written only when it
+       changes, so a scroll costs at most one custom-property write per frame
+       and nothing at all once the ramp is saturated. */
+    var HEADER_RAMP_PX = 120;
+
     function initScrollState() {
         var ticking = false;
+        var lastProgress = -1;
 
         function update() {
             ticking = false;
-            doc.body.classList.toggle("is-scrolled", global.scrollY > 10);
+            var y = global.scrollY || global.pageYOffset || 0;
+            doc.body.classList.toggle("is-scrolled", y > 10);
+
+            var progress = Math.round(Math.min(1, Math.max(0, y / HEADER_RAMP_PX)) * 100) / 100;
+            if (progress === lastProgress) return;
+            lastProgress = progress;
+            root.style.setProperty("--header-progress", String(progress));
         }
 
         global.addEventListener("scroll", function () {

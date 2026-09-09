@@ -203,6 +203,39 @@ let SERVER = null;
     check("start offered once a sensor exists, stop hidden",
         t.$("#startBtn").hidden === false && t.$("#stopBtn").hidden === true && t.$("#simBtn").hidden === false);
 
+    /* -------- 1b. loading state + scroll-reactive chrome ------------------
+       Both are pure presentation contracts: the readouts wear a skeleton until
+       the app publishes `data-mode`, and the appbar's veil is bound to a
+       `--header-progress` value that tracks scroll distance. */
+    const value = t.$("#valX");
+    check("boot publishes data-mode, releasing the readout skeleton",
+        !!doc.body.dataset.mode && !value.matches("body:not([data-mode]) .readout__value"),
+        "data-mode=" + doc.body.dataset.mode);
+    doc.body.removeAttribute("data-mode");
+    check("readouts return to the skeleton with no app state",
+        value.matches("body:not([data-mode]) .readout__value"));
+    doc.body.setAttribute("data-mode", "ready");
+
+    check("appbar carries the progressive lift veil",
+        !!t.$(".appbar__inner > .appbar__veil") && t.$(".appbar__veil").getAttribute("aria-hidden") === "true");
+    check("header progress starts at the top of the page",
+        doc.documentElement.style.getPropertyValue("--header-progress") === "0",
+        JSON.stringify(doc.documentElement.style.getPropertyValue("--header-progress")));
+
+    const scrollTo = async (y) => {
+        Object.defineProperty(window, "scrollY", { value: y, configurable: true, writable: true });
+        window.dispatchEvent(new window.Event("scroll"));
+        await t.wait(60);   // ui.js coalesces to one write per frame
+        return doc.documentElement.style.getPropertyValue("--header-progress");
+    };
+    check("appbar densifies progressively mid-ramp",
+        (await scrollTo(60)) === "0.5" && doc.body.classList.contains("is-scrolled"),
+        doc.documentElement.style.getPropertyValue("--header-progress"));
+    check("ramp saturates instead of growing without bound", (await scrollTo(4000)) === "1");
+    check("scrolling back up releases the veil",
+        (await scrollTo(0)) === "0" && !doc.body.classList.contains("is-scrolled"),
+        doc.documentElement.style.getPropertyValue("--header-progress"));
+
     /* ================= 2. appearance menu + persistence ================= */
     t.click("[data-menu-trigger]");
     await t.wait(40);
@@ -324,6 +357,11 @@ let SERVER = null;
         t.$("#editorState").textContent === "Invalid JSON" &&
         /invalid JSON/i.test(t.$("#dataSummary").textContent), t.$("#dataSummary").textContent);
     check("format disabled on invalid JSON", t.$("#formatBtn").disabled === true);
+    check("field-level error hint sits under the editor",
+        !!t.$(".editor__field > .editor__hint") && /invalid JSON/i.test(t.$(".editor__hint").textContent),
+        t.$(".editor__hint") ? t.$(".editor__hint").textContent.trim().slice(0, 40) + "…" : "missing");
+    check("hint is revealed by the invalid state, not by JS",
+        t.$(".editor__hint").matches('[data-state="invalid"] .editor__hint'));
 
     t.click("#downloadCsvBtn");
     await t.wait(70);
@@ -341,6 +379,8 @@ let SERVER = null;
         t.$("#dataSummary").textContent === "1 sample ready",
         t.$("#editorState").textContent + " / " + t.$("#dataSummary").textContent);
     check("format enabled for valid JSON", t.$("#formatBtn").disabled === false);
+    check("error hint collapses once the JSON parses",
+        !t.$(".editor__hint").matches('[data-state="invalid"] .editor__hint'));
 
     t.click("#formatBtn");
     await t.wait(70);

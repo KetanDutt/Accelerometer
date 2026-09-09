@@ -239,14 +239,15 @@ function ratio(a, b) {
 }
 
 function auditTheme(name, T) {
-    const missing = ["--bg-base", "--mat-primary-bg", "--mat-inset-bg", "--mat-floating-bg",
-        "--mat-appbar-rest-bg", "--pill-bg", "--fill-sunken"].filter((t) => !parseColor(firstStop(T[t])));
+    const missing = ["--bg-base", "--mat-primary-bg", "--mat-secondary-bg", "--mat-inset-bg",
+        "--mat-floating-bg", "--mat-appbar-rest-bg", "--pill-bg", "--fill-sunken", "--fill-sunken-focus"].filter((t) => !parseColor(firstStop(T[t])));
     if (missing.length) {
         fail(`${name}: cannot resolve surface tokens: ${missing.join(", ")}`);
         return;
     }
     const page = parseColor(T["--bg-base"]);
     const glassPrimary = over(parseColor(T["--mat-primary-bg"]), page);
+    const glassSecondary = over(parseColor(T["--mat-secondary-bg"]), page);
     const glassInset = over(parseColor(T["--mat-inset-bg"]), glassPrimary);
     const glassFloating = over(parseColor(T["--mat-floating-bg"]), page);
     const appbar = over(parseColor(T["--mat-appbar-rest-bg"]), page);
@@ -259,6 +260,7 @@ function auditTheme(name, T) {
         ["body text on primary glass", T["--text"], glassPrimary, 4.5],
         ["stat value on inset card", T["--text-strong"], glassInset, 4.5],
         ["editor text on sunken field", T["--text"], over(parseColor(T["--fill-sunken"]), glassInset), 4.5],
+        ["editor text on focused field", T["--text"], over(parseColor(T["--fill-sunken-focus"]), glassInset), 4.5],
         ["nav label on appbar", T["--text-secondary"], appbar, 4.5],
         ["active nav on pill", T["--text-strong"], pill, 4.5],
         ["toast text on floating glass", T["--text-strong"], glassFloating, 4.5],
@@ -270,6 +272,16 @@ function auditTheme(name, T) {
         ["danger chip text", T["--danger-contrast"], over(parseColor(T["--danger-soft"]), glassFloating), 4.5],
         ["warning chip text", T["--warning-contrast"], over(parseColor(T["--warning-soft"]), glassFloating), 4.5],
         ["recording badge text", T["--danger-contrast"], over(parseColor(T["--danger-soft"]), glassPrimary), 4.5],
+        // The controls panel and the info cards sit on secondary glass, which is
+        // the most translucent surface that still carries body copy.
+        ["panel copy on secondary glass", T["--text-secondary"], glassSecondary, 4.5],
+        ["muted label on secondary glass", T["--text-tertiary"], glassSecondary, 4.5],
+        // Readout numerals are the most-read element in the app: they use the ink
+        // grade of the series hue and are held to the text threshold, not 3:1.
+        ["readout numeral X", T["--series-x-ink"], glassInset, 4.5],
+        ["readout numeral Y", T["--series-y-ink"], glassInset, 4.5],
+        ["readout numeral Z", T["--series-z-ink"], glassInset, 4.5],
+        ["readout numeral (magnitude)", T["--accent-contrast"], glassInset, 4.5],
         // chart series and toast icons are graphical: WCAG 1.4.11 asks for 3:1
         ["series X on inset card", T["--series-x"], glassInset, 3],
         ["series Y on inset card", T["--series-y"], glassInset, 3],
