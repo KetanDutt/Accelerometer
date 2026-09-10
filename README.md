@@ -4,7 +4,7 @@ A lightweight, dependency-free web app for **recording your device's acceleromet
 
 > **No tracking. No servers. No dependencies.** Your sensor data never leaves your device — everything runs client-side in the browser.
 
-![Accelerometer preview](https://user-images.githubusercontent.com/30174373/136919996-157790d4-bd8c-4ad4-bdad-e521411db217.png)
+![Accelerometer preview](assets/screenshot.png)
 
 **Live demo:** [https://ketandutt.github.io/Accelerometer/](https://ketandutt.github.io/Accelerometer/)
 
@@ -78,6 +78,8 @@ Accelerometer/
 ├── js/
 │   ├── ui.js           # Presentation layer (theme, menus, dialogs, reveals)
 │   └── app.js          # Application logic (sensor, chart, recording, export)
+├── assets/
+│   └── screenshot.png  # README preview screenshot
 ├── docs/               # Documentation
 ├── LICENSE             # MIT
 └── README.md
